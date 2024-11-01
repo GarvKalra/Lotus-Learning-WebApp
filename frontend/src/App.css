@@ -83,7 +83,14 @@
     color: transparent;
 }
 
-
+.progress-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background-color: #e5e5e5; /* Light background for the bar */
+    border-radius: 4px;
+    overflow: hidden; /* Ensure content doesn't overflow */
+  }
 /* Hover to display children */
 .hover-children {
     display: none;

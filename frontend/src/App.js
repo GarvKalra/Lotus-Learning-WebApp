@@ -39,7 +39,7 @@ import CourseEditPage from "./Pages/Course/CourseEditPage/CourseEditPage";
 import LearningCoursePage from "./Pages/newPages/coursePage/LearningPageCourse/LearningCoursePage";
 import CourseCompletion from "./Pages/newPages/coursePage/LearningPageCourse/CourseCompletion";
 import CoursePreface from "./Pages/newPages/coursePage/LearningPageCourse/CoursePreface";
-
+import AdminSendNotification from "./Pages/newPages/adminPages/adminStudentsManage/AdminSendNotification";
 // Debug For Firebase Messaging
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
@@ -116,6 +116,7 @@ function App() {
             <Route path="/learning/:courseName?" element={<Learning/>}/>
             <Route path="/course-complete" element={<CourseCompletion/>}/>
             <Route path="/course-preface" element={<CoursePreface/>}/>
+            <Route path="/admin/send-notification" element={<AdminSendNotification />} />
             <Route path="/course-search" element={<NewPage/>}/>  {/*  my change   */}
 
             <Route path="/profile/:screen?/:secondscreen?/:courseid?" element={

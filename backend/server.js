@@ -9,7 +9,7 @@ const config = require('./utils/config');
 const graphqlSchema = require('./graphql/schema/schema');
 const graphqlResolvers = require('./graphql/resolvers/resolvers');
 const isAuth = require('./middleware/is-auth');
-// const notificationRoutes = require('./routes/notification');
+ const notificationRoutes = require('./routes/notification');
 const { connectToDatabases } = require('./db/connection');
 // const processNotifications = require('./notification-microservice/worker-service');
 
@@ -18,12 +18,18 @@ const app = express();
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
-app.use(
-  cors({
-    credentials: true,
-    origin: ' http://localhost:3000',
-  })
-);
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+
+
+// Apply CORS middleware globally before routes
+app.use(cors(corsOptions));
+
 
 const logger = require('./logger');
 const pino = require('pino-http')({
@@ -35,7 +41,7 @@ app.use(cookieParser());
 app.use(isAuth);
 
 
-// app.use('/api', notificationRoutes);
+ app.use('/api', notificationRoutes);
 
 // app.use(
 //   '/graphql',
@@ -59,6 +65,7 @@ const adminRoutes = require('./routes/admin-routes/admin-routes')
 app.use('/admin', adminRoutes);
 const aiRoutes = require('./routes/ai-routes/ai-routes')
 app.use('/ai', aiRoutes);
+app.use('/notification',notificationRoutes);
 
 app.use("/test", (req, res) => {
   res.send("hello world!");

@@ -26,6 +26,7 @@ const NotificationsProfile = () => {
   )
 }
 
+
 const NotificationBar = () =>{
     return (
         <div className='bg-white rounded-full flex justify-between items-center py-2 px-4 w-full relative'>

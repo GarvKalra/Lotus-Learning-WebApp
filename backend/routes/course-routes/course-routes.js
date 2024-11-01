@@ -318,38 +318,44 @@ router.post('/remove-lesson-from-enrollments', async (req, res) => {
 
 
 //get enrolled courses
-router.get('/get-enrolled-courses', async (req, res, next) => {
+router.get('/get-enrolled-courses', async (req, res) => {
   try {
-    const userId = req.query.userId;  
-    logger.debug(userId);
+    let { userId, includeInvisible } = req.query; // Read the optional flag
+
+    // Ensure 'includeInvisible' is properly treated as a boolean
+    const includeInvisibleFlag = includeInvisible === 'true';
+
     // Find all enrollments for the user
-    const enrollments = await Enrollment.find({ learner: userId }); 
-    if (enrollments.length === 0) {
-      return res.status(200).json({
-        res: [],
-        success: true,
-      });
-    }
+    const enrollments = await Enrollment.find({ learner: userId }).lean();
 
-    // Get all course IDs from the enrollments
-    const courseIds = enrollments.map(enrollment => enrollment.course);
+    // Ensure all enrollments have the `visible` field set (default to true if undefined)
+    const updatedEnrollments = enrollments.map((enrollment) => ({
+      ...enrollment,
+      visible: enrollment.visible !== undefined ? enrollment.visible : true,
+    }));
 
-    // Fetch the entire course documents
+    // Filter enrollments based on the 'includeInvisible' flag
+    const filteredEnrolls = includeInvisibleFlag
+      ? updatedEnrollments // Include all enrollments if flag is true
+      : updatedEnrollments.filter((enrollment) => enrollment.visible); // Only visible
+
+    // Get all course IDs from filtered enrollments
+    const courseIds = filteredEnrolls.map((enrollment) => enrollment.course);
+
+    // Fetch the courses based on the filtered course IDs
     const courses = await Course.find({ _id: { $in: courseIds } });
 
-    // Return the full course data
-    return res.status(200).json({
-      res: courses, // Directly return the array of course objects
-      success: true,
-    });
+    // Return the filtered course data
+    return res.status(200).json({ res: courses, success: true });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching enrolled courses:', error);
     return res.status(500).json({
       success: false,
       message: 'An error occurred while fetching enrolled courses',
     });
   }
 });
+
 
 router.post('/enroll-student-by-institution', async (req, res) => {
   const { userId } = req.body;
@@ -480,7 +486,7 @@ router.post('/enroll-student', async (req, res) => {
 
 router.post('/update-enrollment/:enrollmentId', async (req, res) => {
   const { enrollmentId } = req.params;
-  const updates = req.body; // Fields to update
+  const updates = req.body; 
 
   try {
     if (!updates || Object.keys(updates).length === 0) {
@@ -493,7 +499,7 @@ router.post('/update-enrollment/:enrollmentId', async (req, res) => {
       { $set: updates }, // Dynamically update the fields sent in the request
       { new: true } // Return the updated document
     );
-
+logger.debug(updatedEnrollment);
     if (!updatedEnrollment) {
       return res.status(404).json({ success: false, message: 'Enrollment not found.' });
     }
@@ -502,6 +508,74 @@ router.post('/update-enrollment/:enrollmentId', async (req, res) => {
   } catch (error) {
     console.error('Error updating enrollment:', error);
     return res.status(500).json({ success: false, message: 'Internal server error.' });
+  }
+});
+
+router.post("/update-multiple-enrollments", async (req, res) => {
+  try {
+    const { updates } = req.body;
+
+    const updatePromises = updates.map(({ enrollmentId, visible }) =>
+      Enrollment.findByIdAndUpdate(enrollmentId, { visible })
+    );
+
+    await Promise.all(updatePromises);
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error updating enrollments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update enrollments visibility.",
+    });
+  }
+});
+
+router.post('/remove-students-from-course', async (req, res) => {
+  try {
+    const { studentIds, courseId } = req.body;
+
+    // Loop through the student IDs and remove the course enrollment
+    const updatedStudents = await Promise.all(
+      studentIds.map(async (studentId) => {
+        const student = await User.findById(studentId);
+        if (!student) return null;
+
+        student.enrollments = student.enrollments.filter(
+          (enrollment) => enrollment.course.toString() !== courseId
+        );
+
+        return student.save();
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `${updatedStudents.filter(Boolean).length} students removed from the course.`,
+    });
+  } catch (error) {
+    console.error('Error removing students from course:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+
+
+router.post('/remove-student-from-course', async (req, res) => {
+  const { studentId, courseId, removeAllCourses } = req.body;
+  
+  try {
+    if (removeAllCourses) {
+      // Remove all enrollments for the student
+      await Enrollment.deleteMany({ learner:studentId });
+    } else {
+      // Remove specific course enrollment
+      await Enrollment.deleteOne({ learner:studentId, course:courseId });
+    }
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error removing student from course:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove student.' });
   }
 });
 
