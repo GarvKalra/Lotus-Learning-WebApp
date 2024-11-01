@@ -11,7 +11,8 @@ const AdminSendNotification = () => {
   const [message, setMessage] = useState("");
   const [recipients, setRecipients] = useState([]);
   const studentIds = state?.studentIds || [];
-
+  const sender = state?.sender || "";
+  console.log(sender);
   const isBulkNotification = studentIds.length > 1;
 
   useEffect(() => {
@@ -61,6 +62,7 @@ const AdminSendNotification = () => {
         title,
         message,
       },
+      senderName:sender,
       status: "unread",
     }));
 

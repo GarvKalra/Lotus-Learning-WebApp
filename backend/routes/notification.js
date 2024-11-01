@@ -38,6 +38,7 @@ router.post('/save-notification', async (req, res) => {
         courseId: notificationData.courseId,
         type: notificationData.type,
         payload: notificationData.payload,
+        senderName:notificationData.senderName,
         status: notificationData.status || 'unread',  // Default to 'unread'
         retryCount: 0,
         maxRetryAttempts: 3
@@ -85,7 +86,7 @@ router.put('/:notificationId/read', async (req, res) => {
     const updatedNotification = await Notification.findByIdAndUpdate(
       notificationId,
       { status: 'read' },
-      { new: true } // Return the updated document
+      { new: true } 
     );
 
     if (!updatedNotification) {
@@ -97,6 +98,37 @@ router.put('/:notificationId/read', async (req, res) => {
     res.status(500).json({ error: 'Failed to update notification status', details: error });
   }
 });
+
+router.delete('/delete-notification', async (req, res) => {
+  try {
+    const { notificationIds } = req.body; // Expect `notificationIds` to be a single ID or an array of IDs
+
+    if (!notificationIds || (Array.isArray(notificationIds) && notificationIds.length === 0)) {
+      return res.status(400).json({ error: 'No notificationId(s) provided for deletion' });
+    }
+
+    // If `notificationIds` is an array, perform a bulk delete; otherwise, delete a single notification
+    const deleteResult = Array.isArray(notificationIds)
+      ? await Notification.deleteMany({ _id: { $in: notificationIds } })
+      : await Notification.findByIdAndDelete(notificationIds);
+
+    // Check if any notifications were deleted
+    if ((deleteResult.deletedCount === 0) || !deleteResult) {
+      return res.status(404).json({ error: 'Notification(s) not found' });
+    }
+
+   
+    res.status(200).json({
+      message: 'Notification(s) deleted successfully',
+      deleteResult
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete notification(s)', details: error });
+  }
+});
+
+module.exports = router;
+
 
 
 module.exports = router;

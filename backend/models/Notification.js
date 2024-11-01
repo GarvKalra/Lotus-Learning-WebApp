@@ -5,7 +5,8 @@ const notificationSchema = mongoose.Schema({
   courseId: String,
   type: { type: String, required: true }, // 'email', 'sms', 'push'
   payload: { type: Object, required: true },
-  status: { type: String, default: 'pending' }, // 'pending', 'delivered', 'failed'
+  senderName:{type:String, required:true},
+  status: { type: String, default: 'unread' }, // 'pending', 'delivered', 'failed'
   retryCount: { type: Number, default: 0 },
   maxRetryAttempts: { type: Number, default: 3 },
 });

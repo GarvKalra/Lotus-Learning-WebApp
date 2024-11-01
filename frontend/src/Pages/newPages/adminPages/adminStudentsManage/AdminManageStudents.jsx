@@ -567,7 +567,7 @@ const AdminManageStudents = () => {
       alert("No students selected for bulk notification.");
       return;
     }
-    navigate(`/admin/send-notification`, { state: { studentIds: selectedStudents } });
+    navigate(`/admin/send-notification`, { state: { studentIds: selectedStudents, sender: authUser.username  } });
   };
   
 
@@ -668,7 +668,9 @@ const AdminManageStudents = () => {
                 isChecked = {isChecked}
                 handleCheckboxChange = {handleCheckboxChange} 
                 removeStudentFromInstitution={removeStudentFromInstitution}
-                removeStudentFromCourse={removeStudentFromCourse}/>
+                removeStudentFromCourse={removeStudentFromCourse}
+                authUser = {authUser}/>
+               
               ))}
               
             </tbody>
@@ -679,7 +681,7 @@ const AdminManageStudents = () => {
   );
 };
 
-const StudentCard = ({ student, selectedCourse, toggleVisibility, isChecked,handleCheckboxChange, removeStudentFromCourse }) => {
+const StudentCard = ({ student, selectedCourse, toggleVisibility, isChecked,handleCheckboxChange, removeStudentFromCourse, authUser }) => {
   // Find the enrollment matching the selected course (if any)
   const navigate = useNavigate();
   const selectedEnrollment = student.enrollments?.find(
@@ -809,7 +811,7 @@ const StudentCard = ({ student, selectedCourse, toggleVisibility, isChecked,hand
   };
 
   const handleSendNotification = (studentId) => {
-    navigate(`/admin/send-notification`, { state: { studentIds: [studentId] } });
+    navigate(`/admin/send-notification`, { state: { studentIds: [studentId], sender:authUser.username } });
   };
 
 
