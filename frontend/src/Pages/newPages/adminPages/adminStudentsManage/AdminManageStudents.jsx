@@ -52,6 +52,26 @@ const AdminManageStudents = () => {
     console.log(filteredStudents); 
   }, [searchTerm, selectedCourse, students]);
 
+  const downloadGradesAsZip = async () => {
+    try {
+      const response = await axios.post('http://localhost:5000/course/download-zip-students-grades', {
+        studentIds: filteredStudents, 
+      }, {
+        responseType: 'blob', // This ensures you handle the zip file as binary data
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'students_grades.zip'); // File name for download
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error downloading the zip file:', error);
+    }
+  };
+
   const removeStudentFromCourse = async (studentId, studentName) => {
     try {
       const isAllCourses = selectedCourse === "";
