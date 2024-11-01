@@ -70,7 +70,6 @@ const AdminSendNotification = () => {
 console.log(response);
       if (response) {
         alert(`Notification sent successfully to ${isBulkNotification ? "selected students" : "the student"}!`);
-        navigate("/admin/manage-students");
       } else {
         alert("Failed to send notification.");
       }
