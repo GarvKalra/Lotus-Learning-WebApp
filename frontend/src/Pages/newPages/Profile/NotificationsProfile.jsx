@@ -5,23 +5,26 @@ import { MdOpenInNew  } from "react-icons/md";
 import { MdOutlineClose } from "react-icons/md";
 import OnHoverExtraHud from '../../../components/OnHoverExtraHud';
 import getNotificationsByUserId from '../../../BackendProxy/notificationProxy/getNotificationsByUserId'
-import { useAuth } from '../../../context/AuthContext'
+import { useAuth } from "../../../context/auth-context";
+import { useSelector } from "react-redux";
 
 const NotificationsProfile = () => {
+  const authUser = useSelector((state) => state.user);
    // Initialize state variables
    const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { userId } = useAuth();
+  const { userId } = authUser._id;
 
   useEffect(() => {
+    console.log(userId);
     const fetchNotifications = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        if (userId) {
+        if (authUser._id) {
           // Get the notifications from backend
-          const userNotifications = await getNotificationsByUserId(userId);
+          const userNotifications = await getNotificationsByUserId(authUser._id);
           setNotifications(userNotifications);
         }
       } catch (error) {
@@ -55,8 +58,8 @@ const NotificationsProfile = () => {
             {notifications.map((notification, index) => (
                 <NotificationBar 
                     key={notification.id || index}
-                    message={notification.message}
-                    description={notification.description}
+                    message={notification.payload.title}
+                    description={"Sender:" + notification.senderName}
                 />
             ))}
         </div>
