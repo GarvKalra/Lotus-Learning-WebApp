@@ -7,10 +7,10 @@ import OnHoverExtraHud from '../../../components/OnHoverExtraHud';
 import getNotificationsByUserId from '../../../BackendProxy/notificationProxy/getNotificationsByUserId'
 import { useAuth } from "../../../context/auth-context";
 import { useSelector } from "react-redux";
+import deleteNotificationsById from '../../../BackendProxy/notificationProxy/deleteNotificationsById'
 
 const NotificationsProfile = () => {
   const authUser = useSelector((state) => state.user);
-   // Initialize state variables
    const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,12 +23,10 @@ const NotificationsProfile = () => {
       setError(null);
       try {
         if (authUser._id) {
-          // Get the notifications from backend
           const userNotifications = await getNotificationsByUserId(authUser._id);
           setNotifications(userNotifications);
         }
       } catch (error) {
-        // Handle any errors that happen during fetch
         console.error('Failed to fetch notifications:', error);
         setError('Failed to load notifications');
       } finally {
@@ -41,8 +39,19 @@ const NotificationsProfile = () => {
 
   if (isLoading) return <div>Loading notifications...</div>;
 
-  // Show error if there's an error
   if (error) return <div>Error: {error}</div>;
+
+  const handleDelete = async (notificationId) => {
+    try {
+      await deleteNotificationsById(notificationId);
+      setNotifications(prevNotifications =>
+        prevNotifications.filter(notification => notification._id !== notificationId)
+      );
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+      alert('Failed to delete notification');
+    }
+  };
 
   return (
     <>
@@ -52,14 +61,15 @@ const NotificationsProfile = () => {
                 <p className='text-lg font-semibold text-white'>{notifications.length}</p>
             </div>
         </div>
-        {/* List of notification items */}
+        {}
         <div className='flex flex-col items-center justify-center w-full mt-3 space-y-2'>
-            {/* Render a NotificationBar component for each notification */}
+            {}
             {notifications.map((notification, index) => (
                 <NotificationBar 
                     key={notification.id || index}
                     message={notification.payload.title}
                     description={"Sender:" + notification.senderName}
+                    onDelete={() => handleDelete(notification._id)}
                 />
             ))}
         </div>
@@ -67,8 +77,8 @@ const NotificationsProfile = () => {
   )
 }
 
-// The component for individual notification items
-const NotificationBar = ({ message, description }) => {
+
+const NotificationBar = ({ message, description, onDelete }) => {
     return (
         <div className='bg-white rounded-full flex justify-between items-center py-2 px-4 w-full relative'>
             <div className='absolute top-1 left-[1%] h-[10px] w-[10px] bg-red-400 rounded-full'></div>
@@ -81,10 +91,10 @@ const NotificationBar = ({ message, description }) => {
                     <OnHoverExtraHud name="Go"/>
                     <MdOpenInNew/>
                 </div>
-                <div className='cursor-pointer hover-parent'>
-                    <OnHoverExtraHud name="Delete"/>
-                    <MdOutlineClose/>
-                </div>
+                <div className='cursor-pointer hover-parent' onClick={onDelete}>
+          <OnHoverExtraHud name="Delete"/>
+          <MdOutlineClose/>
+        </div>
             </div>
         </div>
     )

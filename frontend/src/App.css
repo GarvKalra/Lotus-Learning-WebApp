@@ -8,7 +8,28 @@
 }
 
 
+.overflow-y-scroll {
+    overflow-y: scroll;
+  }
+  
+  .overflow-y-scroll::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+  }
+  
+  .overflow-y-scroll::-webkit-scrollbar-track {
+    background: #f0f0f0; /* Background of the scrollbar track */
+  }
+  
+  .overflow-y-scroll::-webkit-scrollbar-thumb {
+    background-color: #c0c0c0; /* Scrollbar thumb color */
+    border-radius: 4px;
+  }
+  
 
+  .overflow-y-scroll {
+    overflow-y: scroll; /* This will show the scrollbar even if content doesn't overflow */
+    scrollbar-width: thin; /* Optional: makes scrollbar thinner for a neater appearance */
+  }
 
 
 

@@ -102,7 +102,7 @@ router.put('/:notificationId/read', async (req, res) => {
 router.delete('/delete-notification', async (req, res) => {
   try {
     const { notificationIds } = req.body; // Expect `notificationIds` to be a single ID or an array of IDs
-
+    logger.debug(notificationIds);
     if (!notificationIds || (Array.isArray(notificationIds) && notificationIds.length === 0)) {
       return res.status(400).json({ error: 'No notificationId(s) provided for deletion' });
     }
@@ -111,7 +111,7 @@ router.delete('/delete-notification', async (req, res) => {
     const deleteResult = Array.isArray(notificationIds)
       ? await Notification.deleteMany({ _id: { $in: notificationIds } })
       : await Notification.findByIdAndDelete(notificationIds);
-
+  
     // Check if any notifications were deleted
     if ((deleteResult.deletedCount === 0) || !deleteResult) {
       return res.status(404).json({ error: 'Notification(s) not found' });

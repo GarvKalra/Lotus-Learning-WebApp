@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import GeneralNavbar from "../../../../components/navbar/GeneralNavbar";
@@ -14,6 +14,7 @@ const AdminSendNotification = () => {
   const sender = state?.sender || "";
   console.log(sender);
   const isBulkNotification = studentIds.length > 1;
+  const hasFetchedRecipients = useRef(false);
 
   useEffect(() => {
     // Disable scrolling on mount
@@ -34,21 +35,24 @@ const AdminSendNotification = () => {
       return;
     }
 
-    const fetchRecipients = async () => {
-      try {
-        const response = await axios.post("http://localhost:5000/admin/get-students-by-ids", {
-          studentIds,
-        });
-        setRecipients(response.data.students);
-      } catch (error) {
-        console.error("Failed to fetch student details", error);
-        alert("Failed to load recipient information.");
-      }
-    };
+    // Only fetch recipients if it hasn't been fetched before
+    if (!hasFetchedRecipients.current && studentIds.length) {
+      const fetchRecipients = async () => {
+        try {
+          const response = await axios.post("http://localhost:5000/admin/get-students-by-ids", {
+            studentIds,
+          });
+          setRecipients(response.data.students);
+          hasFetchedRecipients.current = true; // Mark as fetched
+        } catch (error) {
+          console.error("Failed to fetch student details", error);
+          alert("Failed to load recipient information.");
+        }
+      };
 
-    fetchRecipients();
+      fetchRecipients();
+    }
   }, [studentIds, navigate]);
-
   const handleSend = async () => {
     if (!title || !message) {
       alert("Please fill in both title and message.");

@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import logo from "../../Images/LotusLogoColour.webp";
 import logoText from "../../Images/lotusletters.webp";
 import styles from "../../Styles";
+import Badge from "@mui/material/Badge"; 
 import { MdOutlineSearch } from "react-icons/md";
 import { CiHeart } from "react-icons/ci";
 import { CiBellOn } from "react-icons/ci";
@@ -11,7 +12,7 @@ import ProfileDropDown from "./profile-dropdown/ProfileDropDown";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import getCoursesByProp from "../../BackendProxy/courseProxy/getCoursesByProp";
-
+import getNotificationsByUserId from "../../BackendProxy/notificationProxy/getNotificationsByUserId";
 const GeneralNavbar = ({ fixed = true }) => {
   const [notificationsDropDown, setNotificationsDropDown] = useState(false);
   const [wishListDropDown, setWishListDropDown] = useState(false);
@@ -20,11 +21,17 @@ const GeneralNavbar = ({ fixed = true }) => {
   const [isLogedIn, setIsLogedIn] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const hasFetched = useRef(false);
 
   const searchRef = useRef(null); 
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const authUser = useSelector((state) => state.user);
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const unreadCount = notifications.filter(notification => notification.status === "unread").length;
 
   const handleSearch = async () => {
     if (isLogedIn && query.trim() !== "" && authUser) { 
@@ -55,6 +62,34 @@ const GeneralNavbar = ({ fixed = true }) => {
   }, [authUser]);
 
   useEffect(() => {
+    // Track if notifications have already been fetched
+  
+  
+    const fetchNotifications = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        if (authUser._id && notifications.length === 0 && !hasFetched.current) {
+          // Fetch notifications from backend
+          const userNotifications = await getNotificationsByUserId(authUser._id);
+          setNotifications(userNotifications);
+          hasFetched.current = true; // Mark as fetched to avoid repeat fetches
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+        setError("Failed to load notifications");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    // Only fetch if notifications are empty and authUser._id is set
+    if (!hasFetched.current && authUser._id) {
+      fetchNotifications();
+    }
+  }, [authUser._id]); // Only run when authUser._id changes
+
+  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 0 && !isFixed) {
         setIsFixed(true);
@@ -62,7 +97,6 @@ const GeneralNavbar = ({ fixed = true }) => {
         setIsFixed(false);
       }
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -156,10 +190,12 @@ const GeneralNavbar = ({ fixed = true }) => {
               onMouseOut={() => setNotificationsDropDown(false)}
               className="relative md:block hidden"
             >
-              <CiBellOn className="text-2xl cursor-pointer" />
+            <Badge badgeContent={unreadCount} color="error" overlap="circular">
+        <CiBellOn className="text-2xl cursor-pointer" />
+      </Badge>
               {notificationsDropDown && (
                 <div className="absolute top-[100%] right-0 z-30">
-                  <NotificationsDropDown />
+                  <NotificationsDropDown notifications={notifications}/>
                 </div>
               )}
             </div>
