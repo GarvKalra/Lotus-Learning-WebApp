@@ -5,6 +5,7 @@ import getNotificationsByUserId from '../../../BackendProxy/notificationProxy/ge
 import deleteNotificationsById from '../../../BackendProxy/notificationProxy/deleteNotificationsById';
 import { useSelector } from "react-redux";
 import './NotificationBar.css';
+import Pagination from './Pagination';
 
 const NotificationsProfile = () => {
   const authUser = useSelector((state) => state.user);
@@ -79,6 +80,10 @@ const NotificationsProfile = () => {
   const reversedNotifications = [...notifications].reverse();
   const currentNotifications = reversedNotifications.slice(indexOfFirstNotification, indexOfLastNotification);
   const totalPages = Math.ceil(notifications.length / itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   const handleDeleteSelected = async () => {
     try {
@@ -186,25 +191,11 @@ const NotificationsProfile = () => {
       )}
       
       {/* Pagination Controls Fixed at the Bottom */}
-      <div className="flex justify-center space-x-4 py-4">
-        <button 
-          onClick={handlePreviousPage} 
-          disabled={currentPage === 1}
-          className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
-        >
-          Previous
-        </button>
-        
-        <span className="text-lg font-semibold">{currentPage} / {totalPages}</span>
-        
-        <button 
-          onClick={handleNextPage} 
-          disabled={currentPage === totalPages}
-            className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
-        >
-          Next
-        </button>
-      </div>
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

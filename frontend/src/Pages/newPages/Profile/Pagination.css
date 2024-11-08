@@ -1,0 +1,71 @@
+/* Pagination.css */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    position: relative;
+  }
+  
+  .pagination-page,
+  .pagination-arrow {
+    background-color: white;
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .pagination-page:hover,
+  .pagination-arrow:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .pagination-page.active {
+    background-color: #007bff;
+    color: white;
+    cursor: default;
+  }
+  
+  .pagination-popup {
+    position: absolute;
+    top: -60px;
+    background-color: white;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  .pagination-input {
+    width: 60px;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .pagination-go-button,
+  .pagination-close-button {
+    padding: 4px 8px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .pagination-close-button {
+    background-color: #dc3545;
+  }
+  
+  .pagination-go-button:hover,
+  .pagination-close-button:hover {
+    opacity: 0.9;
+  }
+  
