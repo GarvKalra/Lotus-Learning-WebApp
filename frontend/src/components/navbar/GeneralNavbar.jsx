@@ -30,6 +30,7 @@ const GeneralNavbar = ({ fixed = true }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const BASE_WS_URL = 'ws://localhost:5000/notification';
 
   const unreadCount = notifications.filter(notification => notification.status === "unread").length;
 
@@ -62,14 +63,11 @@ const GeneralNavbar = ({ fixed = true }) => {
   }, [authUser]);
 
   useEffect(() => {
-    // Track if notifications have already been fetched
-  
-  
     const fetchNotifications = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        if (authUser._id && notifications.length === 0 && !hasFetched.current) {
+        if (authUser && authUser._id && notifications.length === 0 && !hasFetched.current) {
           // Fetch notifications from backend
           const userNotifications = await getNotificationsByUserId(authUser._id);
           setNotifications(userNotifications);
@@ -84,11 +82,10 @@ const GeneralNavbar = ({ fixed = true }) => {
     };
   
     // Only fetch if notifications are empty and authUser._id is set
-    if (!hasFetched.current && authUser._id) {
+    if (!hasFetched.current && authUser && authUser._id) {
       fetchNotifications();
     }
-  }, [authUser._id]); // Only run when authUser._id changes
-
+  }, [authUser, notifications.length]); // Updated dependency array
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 0 && !isFixed) {
@@ -117,6 +114,44 @@ const GeneralNavbar = ({ fixed = true }) => {
       setResults([]); 
     }
   }, [query, isLogedIn]); 
+
+  useEffect(() => {
+    if (isLogedIn) {
+      const ws = new WebSocket(BASE_WS_URL);
+
+      ws.onopen = () => {
+        console.log("Connected to WebSocket");
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.action === 'delete') {
+          // If delete action, remove the specified notifications
+          setNotifications((prevNotifications) =>
+            prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
+          );
+        } else if (data.action === 'new' && data.notification.userId === authUser._id) {
+          // If new notification, add to the top
+          setNotifications((prevNotifications) => [data.notification, ...prevNotifications]);
+        }
+      };
+
+
+      ws.onclose = () => {
+        console.log("WebSocket connection closed");
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+
+      return () => {
+        ws.close();
+      };
+    }
+  }, [isLogedIn]);
+
 
   return (
     <div

@@ -128,7 +128,7 @@ console.log(response);
 
         <button
           onClick={handleSend}
-          className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 text-base"
+          className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
         >
           Send Notification{isBulkNotification && "s"}
         </button>

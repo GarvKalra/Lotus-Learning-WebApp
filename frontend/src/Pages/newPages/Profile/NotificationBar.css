@@ -1,0 +1,23 @@
+.notification-item div {
+    flex: 1;
+    overflow-wrap: anywhere; /* Allows text to wrap within the container */
+  }
+  
+  .font-medium, .text-sm {
+    white-space: normal; /* Allows text to break and wrap to the next line */
+    word-wrap: break-word; /* Ensures long words break and wrap */
+    overflow-wrap: anywhere; /* Forces wrapping of long continuous text */
+  }
+
+  .flex.items-center {
+  align-items: center;
+}
+
+.bg-white.rounded-lg {
+  transition: box-shadow 0.3s ease;
+}
+
+.bg-white.rounded-lg:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+

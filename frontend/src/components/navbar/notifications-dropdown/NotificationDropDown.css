@@ -1,56 +1,73 @@
 .notifications-dropdown {
-    width: 300px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .notifications-dropdown-header {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .notifications-list {
-    max-height: 150px; /* Adjust height as needed */
-    overflow-y: scroll; /* Forces scrollbar to appear right away */
-  }
-  
-  .notification-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 10px; /* Adjust padding to fully fill the width */
-    border-bottom: 1px solid #ccc; /* Darker border color for more visibility */
-    transition: background-color 0.2s ease; /* Smooth transition for hover effect */
-    width: 100%; /* Ensure it fills the container width */
-  }
-  
-  .notification-item:last-child {
-    border-bottom: none; /* Remove the border for the last item */
-  }
-  
-  .notification-item:hover {
-    background-color: #e0e0e0; /* Highlight color on hover */
-  }
-  
-  .status-icon {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 8px;
-  }
-  
-  .status-read {
-    background-color: green;
-  }
-  
-  .status-unread {
-    background-color: red;
-  }
-  
-  .no-notifications {
-    text-align: center;
-    color: #888;
-    padding: 10px;
-  }
-  
+  width: 300px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.notifications-dropdown-header {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.notifications-list {
+  max-height: 150px; /* Adjust height as needed */
+  overflow-y: auto; /* Forces scrollbar to appear when content overflows */
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 10px;
+  border-bottom: 1px solid #ccc;
+  transition: background-color 0.2s ease;
+  width: 100%;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item:hover {
+  background-color: #e0e0e0;
+}
+
+.status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-read {
+  background-color: green;
+}
+
+.status-unread {
+  background-color: red;
+}
+
+.notification-item div {
+  flex: 1;
+  overflow-wrap: anywhere; /* Allows wrapping long words to the next line */
+}
+
+.font-semibold {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  white-space: normal; /* Ensures text wraps to the next line */
+}
+
+.text-stone-500 {
+  font-size: 12px;
+  color: #555;
+  white-space: normal; /* Ensures text wraps to the next line */
+}
+
+.no-notifications {
+  text-align: center;
+  color: #888;
+  padding: 10px;
+}

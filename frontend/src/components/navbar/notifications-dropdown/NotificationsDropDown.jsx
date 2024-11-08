@@ -14,7 +14,7 @@ const NotificationsDropDown = ({ notifications }) => {
               {/* Status Icon */}
               <span
                 className={`status-icon ${
-                  notification.status ? 'status-read' : 'status-unread'
+                  notification.status ? 'status-unread' : 'status-read'
                 }`}
                 title={notification.status ? 'read' : 'unread'}
               ></span>

@@ -1,6 +1,7 @@
 const express = require('express');
 const logger = require('../logger');
 const Notification = require('../../backend/models/Notification')
+const {broadcastNotification} = require('../websocket')
 
 const router = express.Router();
 const {
@@ -48,7 +49,9 @@ router.post('/save-notification', async (req, res) => {
 
     // Wait for all notifications to be saved
     const savedNotifications = await Promise.all(savePromises);
-
+    savedNotifications.forEach(notification => 
+      broadcastNotification({ action: 'new', notification })
+    );
     logger.debug(savedNotifications);
 
     // Send a success response
@@ -93,6 +96,11 @@ router.put('/:notificationId/read', async (req, res) => {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
+    broadcastNotification({
+      action: 'update',
+      notification: updatedNotification
+    });
+
     res.status(200).json({ message: 'Notification marked as read', updatedNotification });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update notification status', details: error });
@@ -117,6 +125,11 @@ router.delete('/delete-notification', async (req, res) => {
       return res.status(404).json({ error: 'Notification(s) not found' });
     }
 
+    broadcastNotification({
+      action: 'delete',
+      notificationIds: Array.isArray(notificationIds) ? notificationIds : [notificationIds]
+    });
+
    
     res.status(200).json({
       message: 'Notification(s) deleted successfully',
@@ -131,4 +144,3 @@ module.exports = router;
 
 
 
-module.exports = router;
