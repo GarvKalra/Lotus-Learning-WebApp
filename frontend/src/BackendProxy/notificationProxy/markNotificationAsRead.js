@@ -2,13 +2,18 @@ import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5000/notification';
 
-async function markNotificationAsRead(notificationId) {
+async function markNotificationAsRead(notificationIds) {
   try {
-    const response = await axios.put(`${BASE_URL}/${notificationId}/read`);
+    // Ensure notificationIds is an array, so we can support both single and multiple notifications
+    const idsArray = Array.isArray(notificationIds) ? notificationIds : [notificationIds];
+
+    const response = await axios.put(`${BASE_URL}/mark-as-read`, {
+      notificationIds: idsArray
+    });
     console.log(response.data.message); 
     return response.data; 
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    console.error('Error marking notification(s) as read:', error);
     throw error; 
   }
 }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { MdOpenInNew, MdOutlineClose, MdDelete } from "react-icons/md";
+import { MdOpenInNew, MdOutlineClose, MdDelete, MdBook } from "react-icons/md";
 import OnHoverExtraHud from '../../../components/OnHoverExtraHud';
 import getNotificationsByUserId from '../../../BackendProxy/notificationProxy/getNotificationsByUserId';
 import deleteNotificationsById from '../../../BackendProxy/notificationProxy/deleteNotificationsById';
+import markNotificationAsRead from '../../../BackendProxy/notificationProxy/markNotificationAsRead';
 import { useSelector } from "react-redux";
 import './NotificationBar.css';
 import Pagination from './Pagination';
@@ -11,6 +12,7 @@ const NotificationsProfile = () => {
   const authUser = useSelector((state) => state.user);
   const [notifications, setNotifications] = useState([]);
   const [selectedNotifications, setSelectedNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,6 +27,7 @@ const NotificationsProfile = () => {
         if (authUser._id) {
           const userNotifications = await getNotificationsByUserId(authUser._id);
           setNotifications(userNotifications);
+          updateUnreadCount(userNotifications);
         }
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
@@ -50,11 +53,27 @@ const NotificationsProfile = () => {
         const data = JSON.parse(event.data);
 
         if (data.action === 'new' && data.notification.userId === authUser._id) {
-          setNotifications((prevNotifications) => [data.notification, ...prevNotifications]);
+          setNotifications((prevNotifications) => {
+            const updatedNotifications = [data.notification, ...prevNotifications];
+            updateUnreadCount(updatedNotifications);
+            return updatedNotifications;
+          });
         } else if (data.action === 'delete') {
-          setNotifications((prevNotifications) =>
-            prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
-          );
+          setNotifications((prevNotifications) => {
+            const updatedNotifications = prevNotifications.filter(notification => !data.notificationIds.includes(notification._id));
+            updateUnreadCount(updatedNotifications);
+            return updatedNotifications;
+          });
+        } else if (data.action === 'update') {
+          setNotifications((prevNotifications) => {
+            const updatedNotifications = prevNotifications.map(notification =>
+              data.notificationIds.includes(notification._id)
+                ? { ...notification, status: 'read' }
+                : notification
+            );
+            updateUnreadCount(updatedNotifications);
+            return updatedNotifications;
+          });
         }
       };
 
@@ -72,29 +91,42 @@ const NotificationsProfile = () => {
     }
   }, [authUser]);
 
-  if (isLoading) return <div>Loading notifications...</div>;
-  if (error) return <div>Error: {error}</div>;
-
-  const indexOfLastNotification = currentPage * itemsPerPage;
-  const indexOfFirstNotification = indexOfLastNotification - itemsPerPage;
-  const reversedNotifications = [...notifications].reverse();
-  const currentNotifications = reversedNotifications.slice(indexOfFirstNotification, indexOfLastNotification);
-  const totalPages = Math.ceil(notifications.length / itemsPerPage);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  const updateUnreadCount = (notifications) => {
+    const unread = notifications.filter(notification => notification.status === 'unread').length;
+    setUnreadCount(unread);
   };
 
   const handleDeleteSelected = async () => {
     try {
       await deleteNotificationsById(selectedNotifications);
-      setNotifications(prevNotifications =>
-        prevNotifications.filter(notification => !selectedNotifications.includes(notification._id))
-      );
-      setSelectedNotifications([]); // Clear selected notifications after deletion
+      setNotifications((prevNotifications) => {
+        const updatedNotifications = prevNotifications.filter(notification => !selectedNotifications.includes(notification._id));
+        updateUnreadCount(updatedNotifications);
+        return updatedNotifications;
+      });
+      setSelectedNotifications([]);
     } catch (error) {
       console.error('Failed to delete selected notifications:', error);
       alert('Failed to delete selected notifications');
+    }
+  };
+
+  const handleMarkAsRead = async () => {
+    try {
+      await markNotificationAsRead(selectedNotifications);
+      setNotifications((prevNotifications) => {
+        const updatedNotifications = prevNotifications.map(notification =>
+          selectedNotifications.includes(notification._id)
+            ? { ...notification, status: 'read' }
+            : notification
+        );
+        updateUnreadCount(updatedNotifications);
+        return updatedNotifications;
+      });
+      setSelectedNotifications([]);
+    } catch (error) {
+      console.error('Failed to mark notifications as read:', error);
+      alert('Failed to mark notifications as read');
     }
   };
 
@@ -110,47 +142,36 @@ const NotificationsProfile = () => {
     }
   };
 
+  const indexOfLastNotification = currentPage * itemsPerPage;
+  const indexOfFirstNotification = indexOfLastNotification - itemsPerPage;
+  const reversedNotifications = [...notifications].reverse();
+  const currentNotifications = reversedNotifications.slice(indexOfFirstNotification, indexOfLastNotification);
+  const totalPages = Math.ceil(notifications.length / itemsPerPage);
+
+  const handlePageChange = (page) => setCurrentPage(page);
+
   const handleSelectNotification = (id) => {
-    setSelectedNotifications(prevSelected => 
+    setSelectedNotifications((prevSelected) =>
       prevSelected.includes(id)
         ? prevSelected.filter(notificationId => notificationId !== id)
         : [...prevSelected, id]
     );
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(prevPage => prevPage + 1);
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) setCurrentPage(prevPage => prevPage - 1);
-  };
-
-  // Toggle select all notifications on the current page
   const handleSelectAll = () => {
     const allSelected = currentNotifications.every(notification => selectedNotifications.includes(notification._id));
-    if (allSelected) {
-      setSelectedNotifications(prevSelected =>
-        prevSelected.filter(id => !currentNotifications.map(n => n._id).includes(id))
-      );
-    } else {
-      setSelectedNotifications(prevSelected => [
-        ...prevSelected,
-        ...currentNotifications.map(notification => notification._id).filter(id => !prevSelected.includes(id))
-      ]);
-    }
+    setSelectedNotifications(allSelected ? [] : currentNotifications.map(notification => notification._id));
   };
 
   return (
     <div className="relative flex flex-col h-full min-h-[600px]">
-      <div className='bg-white rounded-full flex justify-between items-center py-2 px-4'>
-        <p className='font-semibold text-lg'>Notifications</p>
+      <div className="bg-white rounded-full flex justify-between items-center py-2 px-4">
+        <p className="font-semibold text-lg">Notifications</p>
         <div className="flex items-center space-x-3 bg-red-400 w-[30px] h-[30px] justify-center rounded-full">
-          <p className='text-lg font-semibold text-white'>{notifications.length}</p>
+          <p className="text-lg font-semibold text-white">{unreadCount}</p>
         </div>
       </div>
 
-      {/* Notification List with Select All Checkbox */}
       <div className="flex-grow overflow-y-auto mt-3 px-4">
         <div className="flex items-center space-x-2">
           <input 
@@ -177,9 +198,20 @@ const NotificationsProfile = () => {
         ))}
       </div>
 
-      {/* Trash bin icon button for multi-delete positioned at bottom right */}
+      {selectedNotifications.length > 0 && (
+
+<div className="absolute bottom-9 right-20 flex items-center justify-center">
+      <button 
+    onClick={handleMarkAsRead}
+    className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:shadow-lg relative hover-parent"
+    >
+    <OnHoverExtraHud name="Read" />
+    <MdBook className="text-xl" />
+  </button>
+  </div>)}
       {selectedNotifications.length > 0 && (
         <div className="absolute bottom-9 right-4 flex items-center justify-center">
+      
           <button 
             onClick={handleDeleteSelected}
             className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 hover:shadow-lg relative hover-parent"
@@ -189,8 +221,6 @@ const NotificationsProfile = () => {
           </button>
         </div>
       )}
-      
-      {/* Pagination Controls Fixed at the Bottom */}
       <Pagination
         totalPages={totalPages}
         currentPage={currentPage}
@@ -198,7 +228,7 @@ const NotificationsProfile = () => {
       />
     </div>
   );
-}
+};
 const NotificationBar = ({ id, message, description, status, isSelected, onSelect, onDelete }) => {
   return (
     <div className="flex items-center space-x-2 py-2">

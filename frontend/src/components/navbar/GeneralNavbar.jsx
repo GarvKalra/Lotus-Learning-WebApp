@@ -126,17 +126,22 @@ const GeneralNavbar = ({ fixed = true }) => {
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
-        if (data.action === 'delete') {
-          // If delete action, remove the specified notifications
+        if (data.action === 'new' && data.notification.userId === authUser._id) {
+          setNotifications((prevNotifications) => [data.notification, ...prevNotifications]);
+        } else if (data.action === 'delete') {
           setNotifications((prevNotifications) =>
             prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
           );
-        } else if (data.action === 'new' && data.notification.userId === authUser._id) {
-          // If new notification, add to the top
-          setNotifications((prevNotifications) => [data.notification, ...prevNotifications]);
+        } else if (data.action === 'update') {
+          setNotifications((prevNotifications) =>
+            prevNotifications.map(notification =>
+              data.notificationIds.includes(notification._id)
+                ? { ...notification, status: 'read' }
+                : notification
+            )
+          );
         }
       };
-
 
       ws.onclose = () => {
         console.log("WebSocket connection closed");

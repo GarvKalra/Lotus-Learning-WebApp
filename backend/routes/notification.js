@@ -82,26 +82,37 @@ router.get('/:userId', async (req, res) => {
 });
 
 
-router.put('/:notificationId/read', async (req, res) => {
-  const { notificationId } = req.params;
+router.put('/mark-as-read', async (req, res) => {
+  const { notificationIds } = req.body; // Expect `notificationIds` to be a single ID or an array of IDs
+
+  if (!notificationIds || (Array.isArray(notificationIds) && notificationIds.length === 0)) {
+    return res.status(400).json({ error: 'No notificationId(s) provided for update' });
+  }
 
   try {
-    const updatedNotification = await Notification.findByIdAndUpdate(
-      notificationId,
-      { status: 'read' },
-      { new: true } 
-    );
+    // If `notificationIds` is an array, perform a bulk update; otherwise, update a single notification
+    const updateResult = Array.isArray(notificationIds)
+      ? await Notification.updateMany({ _id: { $in: notificationIds } }, { status: 'read' }, { new: true })
+      : await Notification.findByIdAndUpdate(notificationIds, { status: 'read' }, { new: true });
 
-    if (!updatedNotification) {
-      return res.status(404).json({ error: 'Notification not found' });
+    // Check if any notifications were updated
+    const updatedNotifications = Array.isArray(notificationIds)
+      ? await Notification.find({ _id: { $in: notificationIds }, status: 'read' })
+      : [updateResult].filter(Boolean); // Ensure the result is an array
+
+    if (updatedNotifications.length === 0) {
+      return res.status(404).json({ error: 'Notification(s) not found' });
     }
 
     broadcastNotification({
       action: 'update',
-      notification: updatedNotification
+      notificationIds: Array.isArray(notificationIds) ? notificationIds : [notificationIds],
     });
 
-    res.status(200).json({ message: 'Notification marked as read', updatedNotification });
+    res.status(200).json({
+      message: 'Notification(s) marked as read successfully',
+      updatedNotifications,
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update notification status', details: error });
   }
