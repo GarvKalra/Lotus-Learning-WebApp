@@ -7,6 +7,7 @@ import markNotificationAsRead from '../../../BackendProxy/notificationProxy/mark
 import { useSelector } from "react-redux";
 import './NotificationBar.css';
 import Pagination from './Pagination';
+import { useNavigate } from 'react-router-dom';
 
 const NotificationsProfile = () => {
   const authUser = useSelector((state) => state.user);
@@ -193,6 +194,7 @@ const NotificationsProfile = () => {
               isSelected={selectedNotifications.includes(notification._id)}
               onSelect={() => handleSelectNotification(notification._id)}
               onDelete={() => handleDelete(notification._id)}
+              notification={notification}
             />
           </div>
         ))}
@@ -229,7 +231,23 @@ const NotificationsProfile = () => {
     </div>
   );
 };
-const NotificationBar = ({ id, message, description, status, isSelected, onSelect, onDelete }) => {
+const NotificationBar = ({ id, message, description, status, isSelected, onSelect, onDelete, notification }) => {
+  const navigate = useNavigate();
+
+  const handleNavigateToMessage = () => {
+    navigate('/messages', {
+      state: {
+        notificationData: {
+          payload: {
+            title: message,
+            message: notification.payload.message
+          },
+          senderName: description.replace('Sender:', '')
+        }
+      }
+    });
+  };
+
   return (
     <div className="flex items-center space-x-2 py-2">
      
@@ -250,7 +268,10 @@ const NotificationBar = ({ id, message, description, status, isSelected, onSelec
           <p className="text-sm text-stone-500">{description || 'Notification description'}</p>
         </div>
         <div className="flex space-x-2">
-          <button className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 focus:outline-none hover-parent" onClick={onSelect}>
+          <button 
+            className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 focus:outline-none hover-parent" 
+            onClick={handleNavigateToMessage}
+          >
             <MdOpenInNew />
             <OnHoverExtraHud name="Go" />
           </button>
