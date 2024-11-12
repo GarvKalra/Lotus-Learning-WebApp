@@ -174,7 +174,6 @@ const NotificationsProfile = () => {
   };
   const indexOfLastNotification = currentPage * itemsPerPage;
   const indexOfFirstNotification = indexOfLastNotification - itemsPerPage;
-  const reversedNotifications = [...notifications].reverse();
   const currentNotifications = notifications.slice(indexOfFirstNotification, indexOfLastNotification);
   const totalPages = Math.ceil(notifications.length / itemsPerPage);
 

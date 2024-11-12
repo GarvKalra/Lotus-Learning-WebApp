@@ -74,7 +74,6 @@ const GeneralNavbar = ({ fixed = true }) => {
         if (authUser && authUser._id && notifications.length === 0 && !hasFetched.current) {
           const userNotifications = await getNotificationsByUserId(authUser._id);
           
-          // Ensure initial notifications are ordered newest-first
           setNotifications(userNotifications);
           hasFetched.current = true; // Prevent repeat fetches
         }
