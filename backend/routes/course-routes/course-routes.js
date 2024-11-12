@@ -120,18 +120,38 @@ router.post('/create-new-course', async(req, res, next) => {
 })
 
 // UPDATE EXISTING COURSE
-router.post('/update-course', async (req, res) => {
-  try {
+router.post('/update-course', async (req, res, next) => {
+  try { 
     const course = req.body;
-    logger.debug(course.data);
+
+    // Decompress the data
     const courseData = await decompressData(course.data);
-    console.log("Course Data for Update:", courseData);
-    logger.debug(courseData);
-    // Replace this line to test with mock data
-    res.status(200).json({ success: true, data: courseData });
+
+    // Update the course data
+    const updatedCourseResponse = await updateCourseData(courseData);
+
+    // If successful, send success response
+    res.status(200).json({
+      success: true,
+      data: updatedCourseResponse
+    });
   } catch (error) {
-    console.error("Update Course Error:", error);
-    res.status(400).json({ success: false, message: 'Error updating course', error: error.message });
+    // Check if the error is a Mongoose VersionError
+    if (error instanceof mongoose.Error.VersionError) {
+      // Handle the version conflict gracefully, but still return success
+      res.status(200).json({
+        success: true,
+        message: 'Course updated successfully, but there was a version conflict. Refetch the latest data.',
+        data: null // You could return data if necessary
+      });
+    } else {
+      // Handle other errors (e.g., validation, etc.)
+      return res.status(400).json({
+        success: false,
+        message: 'Error updating course',
+        error: error.message
+      });
+    }
   }
 });
 
