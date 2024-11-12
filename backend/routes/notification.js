@@ -71,7 +71,7 @@ router.get('/:userId', async (req, res) => {
 
   try {
     // Find all notifications that match the given userId
-    const notifications = await Notification.find({ userId });
+    const notifications = await Notification.find({ userId: userId }).sort({ createdAt: -1 });
 
     // Return the found notifications
     res.status(200).json(notifications);

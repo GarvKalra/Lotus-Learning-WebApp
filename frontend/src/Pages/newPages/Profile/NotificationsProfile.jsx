@@ -18,7 +18,7 @@ const NotificationsProfile = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const BASE_WS_URL = 'ws://localhost:5000/notification';
+  const BASE_WS_URL = 'ws://localhost:5000';
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -44,17 +44,18 @@ const NotificationsProfile = () => {
   useEffect(() => {
     if (authUser && authUser._id) {
       const ws = new WebSocket(BASE_WS_URL);
-
+  
       ws.onopen = () => {
         console.log("Connected to WebSocket");
       };
-
+  
       ws.onmessage = (event) => {
         console.log("Received WebSocket message:", event.data);
         const data = JSON.parse(event.data);
-
+  
         if (data.action === 'new' && data.notification.userId === authUser._id) {
           setNotifications((prevNotifications) => {
+            // Prepend the new notification at the top
             const updatedNotifications = [data.notification, ...prevNotifications];
             updateUnreadCount(updatedNotifications);
             return updatedNotifications;
@@ -77,20 +78,24 @@ const NotificationsProfile = () => {
           });
         }
       };
-
+  
       ws.onclose = () => {
         console.log("WebSocket connection closed");
       };
-
+  
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
       };
-
+  
       return () => {
         ws.close();
       };
     }
   }, [authUser]);
+  
+  // Remove reversedNotifications and use notifications directly
+ 
+  
 
   const updateUnreadCount = (notifications) => {
     const unread = notifications.filter(notification => notification.status === 'unread').length;
@@ -170,7 +175,7 @@ const NotificationsProfile = () => {
   const indexOfLastNotification = currentPage * itemsPerPage;
   const indexOfFirstNotification = indexOfLastNotification - itemsPerPage;
   const reversedNotifications = [...notifications].reverse();
-  const currentNotifications = reversedNotifications.slice(indexOfFirstNotification, indexOfLastNotification);
+  const currentNotifications = notifications.slice(indexOfFirstNotification, indexOfLastNotification);
   const totalPages = Math.ceil(notifications.length / itemsPerPage);
 
   const handlePageChange = (page) => setCurrentPage(page);
