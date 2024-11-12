@@ -20,7 +20,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   // <ApolloProvider client={client}>
     <Provider store={store}>
-      <GoogleOAuthProvider clientId="689689573550-agn1nvas4qbvpf4ijj9mqf9dfad91a7d.apps.googleusercontent.com">
+      <GoogleOAuthProvider clientId="129610006350-hv6hhjvj0vbn2j04mvaaln1gg5drt5qv.apps.googleusercontent.com">
         <App />
       </GoogleOAuthProvider>
     </Provider>
