@@ -42,37 +42,44 @@ const Pagination = ({ totalPages, currentPage, onPageChange }) => {
 
   const getPageNumbers = () => {
     const pageNumbers = [];
-    const maxVisiblePages = 5;
-    
+    const maxVisiblePages = 4;
+  
+    // Always show the first page
+    pageNumbers.push(1);
+  
     if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
+      // If total pages are within max visible, show all pages
+      for (let i = 2; i <= totalPages; i++) {
         pageNumbers.push(i);
       }
       return pageNumbers;
     }
-
-    pageNumbers.push(1);
-
-    const startPage = Math.max(2, currentPage - 1);
-    const endPage = Math.min(totalPages - 1, currentPage + 1);
-
+  
+    // Calculate start and end dynamically based on currentPage
+    const startPage = Math.max(2, currentPage - 2);  // Start from 2 pages before the current page
+    const endPage = currentPage >= totalPages - 2 ? totalPages - 1 : currentPage + 2;
+  
+    // Add ellipsis after the first page if needed
     if (startPage > 2) {
       pageNumbers.push("...");
     }
-
+  
+    // Add pages from startPage to endPage
     for (let i = startPage; i <= endPage; i++) {
       pageNumbers.push(i);
     }
-
+  
+    // Add ellipsis before the last page if needed
     if (endPage < totalPages - 1) {
       pageNumbers.push("...");
     }
-
+  
+    // Always show the last page
     pageNumbers.push(totalPages);
-
+  
     return pageNumbers;
   };
-
+  
   return (
     <div className="pagination">
       <button

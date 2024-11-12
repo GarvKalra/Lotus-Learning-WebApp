@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 import axios from "axios";
 import { FiEye, FiEyeOff, FiBell} from "react-icons/fi";
 import ProgressBar from "./ProgressBar";
+import Pagination from "../../Profile/Pagination";
 
 
 const AdminManageStudents = () => {
@@ -24,11 +25,46 @@ const AdminManageStudents = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedStudents, setSelectedStudents] = useState([]); 
+  const [selectAll, setSelectAll] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); 
+  const itemsPerPage = 3; 
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+
 
   const navigate = useNavigate();
 
-  
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      // Deselect all if currently selected
+      setSelectedStudents([]);
+    } else {
+      // Select all students on the current page
+      const currentPageStudentIds = filteredStudents.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+      ).map(student => student._id);
+      setSelectedStudents(currentPageStudentIds);
+    }
+    setSelectAll(!selectAll);
+  };
 
+  useEffect(() => {
+    const currentPageStudentIds = filteredStudents.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    ).map(student => student._id);
+
+    const allSelected = currentPageStudentIds.every(id =>
+      selectedStudents.includes(id)
+    );
+
+    setSelectAll(allSelected);
+  }, [selectedStudents, filteredStudents, currentPage, itemsPerPage]);
+
+
+
+
+  
   // Fetch students and courses on load
   useEffect(() => {
     const fetchAllData = async () => {
@@ -43,14 +79,24 @@ const AdminManageStudents = () => {
   }, [authUser]);
 
   useEffect(() => {
+    const lastPage = Math.ceil(filteredStudents.length / itemsPerPage);
+    if (currentPage > lastPage) {
+      setCurrentPage(lastPage); // Set currentPage to the last available page
+    }
+  }, [filteredStudents, itemsPerPage, currentPage]);
+  
+
+  useEffect(() => {
     const fetchFilteredStudents = async () => {
       await filterStudents(); 
-    
+      setCurrentPage(1);
     };
   
     fetchFilteredStudents(); 
     console.log(filteredStudents); 
   }, [searchTerm, selectedCourse, students]);
+
+
 
   const downloadGradesAsZip = async () => {
     try {
@@ -115,6 +161,8 @@ const AdminManageStudents = () => {
   
         setStudents(updatedStudents);
         filterStudents(updatedStudents); // Ensure filtered list is also updated
+        adjustPageAfterDeletion();
+        
       } else {
         alert(`Failed to remove ${studentName} from the course(s).`);
       }
@@ -176,6 +224,7 @@ const AdminManageStudents = () => {
   
         setStudents(updatedStudents);
         filterStudents(updatedStudents); // Sync filtered list
+        adjustPageAfterDeletion();
         setSelectedStudents([]); // Clear selected checkboxes
       } else {
         alert("Failed to remove students from the course(s).");
@@ -569,7 +618,22 @@ const AdminManageStudents = () => {
     }
     navigate(`/admin/send-notification`, { state: { studentIds: selectedStudents, sender: authUser.username  } });
   };
-  
+
+  const indexOfLastStudent = currentPage * itemsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - itemsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
+
+  // Page change handler
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const adjustPageAfterDeletion = () => {
+    const lastPage = Math.ceil(filteredStudents.length / itemsPerPage);
+    if (currentPage > lastPage && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   return (
     <div>
@@ -625,15 +689,21 @@ const AdminManageStudents = () => {
   onClick={handleSendBulkNotification}
   className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
 >
-  Send Bulk Notification
+  Send Notification
 </button>
 
-          <button
-            onClick={downloadGradesOneFile}
-            className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
-          >
-            Download All Grades
-          </button>
+<button
+    onClick={() => {
+      if (selectedStudents.length === 0) {
+        alert("Please select at least one student to download grades.");
+      } else {
+        downloadGradesOneFile();
+      }
+    }}
+    className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
+  >
+    Download Grades
+  </button>
      
 
         <button
@@ -643,11 +713,17 @@ const AdminManageStudents = () => {
     Toggle Visibility 
   </button>
   <button
-  onClick={removeFromCourseMulti}
-  className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
->
-  Remove Selected Students
-</button>
+    onClick={() => {
+      if (selectedStudents.length === 0) {
+        alert("Please select at least one student to remove.");
+      } else {
+        removeFromCourseMulti();
+      }
+    }}
+    className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
+  >
+    Remove Students
+  </button>
   </div>
 
         <div className="bg-white py-2 px-4 mt-1 rounded-lg">
@@ -661,7 +737,7 @@ const AdminManageStudents = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.map((student) => (
+              {currentStudents.map((student) => (
                 <StudentCard key={student._id} student={student}  
                 selectedCourse={selectedCourse}
                 toggleVisibility={toggleVisibility}
@@ -674,7 +750,30 @@ const AdminManageStudents = () => {
               ))}
               
             </tbody>
-          </table>
+            <tfoot>
+      <tr>
+        <td colSpan="4" >
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              checked={selectAll}
+              onChange={toggleSelectAll}
+              className="w-5 h-5 mr-2"
+            />
+            <label className="font-normal">Select All</label>
+          </div>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+
+
+
+          <Pagination
+          totalPages={totalPages}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+        />
         </div>
       </div>
     </div>
@@ -828,14 +927,15 @@ const StudentCard = ({ student, selectedCourse, toggleVisibility, isChecked,hand
     </td>
     <td>{student.email || "No Email"}</td>
     <td className="w-[30%]">
-  <div className="flex items-center space-x-3">
-    <span className="text-sm text-gray-600 w-10 text-right">
+  <div className="flex items-center space-x-2">
+    <span className="text-sm text-gray-600 w-12 text-right">
       {progress.toFixed(1)}%
     </span>
-    <ProgressBar progress={progress} />
+    <div className="flex-grow">
+      <ProgressBar progress={progress} />
+    </div>
   </div>
 </td>
-
 
     <td className="flex space-x-6 items-center justify-end">
     

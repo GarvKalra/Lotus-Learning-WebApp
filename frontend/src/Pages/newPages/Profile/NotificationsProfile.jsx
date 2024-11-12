@@ -103,6 +103,7 @@ const NotificationsProfile = () => {
       setNotifications((prevNotifications) => {
         const updatedNotifications = prevNotifications.filter(notification => !selectedNotifications.includes(notification._id));
         updateUnreadCount(updatedNotifications);
+        adjustPageOnDeletion(updatedNotifications);
         return updatedNotifications;
       });
       setSelectedNotifications([]);
@@ -134,8 +135,22 @@ const NotificationsProfile = () => {
   const handleDelete = async (notificationId) => {
     try {
       await deleteNotificationsById(notificationId);
-      setNotifications(prevNotifications =>
-        prevNotifications.filter(notification => notification._id !== notificationId)
+  
+      // Filter out the deleted notification and update notifications state
+      setNotifications(prevNotifications => {
+        const updatedNotifications = prevNotifications.filter(
+          notification => notification._id !== notificationId
+        );
+  
+        // Adjust the current page if the last item on the page was deleted
+        adjustPageOnDeletion(updatedNotifications);
+  
+        return updatedNotifications;
+      });
+  
+      // Remove the notification from selectedNotifications if it exists
+      setSelectedNotifications(prevSelected => 
+        prevSelected.filter(id => id !== notificationId)
       );
     } catch (error) {
       console.error('Failed to delete notification:', error);
@@ -143,6 +158,15 @@ const NotificationsProfile = () => {
     }
   };
 
+  const adjustPageOnDeletion = (updatedNotifications) => {
+    const totalItems = updatedNotifications.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+    // Check if the current page is now out of range
+    if (currentPage > totalPages && currentPage > 1) {
+      setCurrentPage(currentPage - 1); // Move one page back
+    }
+  };
   const indexOfLastNotification = currentPage * itemsPerPage;
   const indexOfFirstNotification = indexOfLastNotification - itemsPerPage;
   const reversedNotifications = [...notifications].reverse();
@@ -158,6 +182,7 @@ const NotificationsProfile = () => {
         : [...prevSelected, id]
     );
   };
+
 
   const handleSelectAll = () => {
     const allSelected = currentNotifications.every(notification => selectedNotifications.includes(notification._id));
@@ -190,6 +215,7 @@ const NotificationsProfile = () => {
               id={notification._id}
               message={notification.payload.title}
               description={"Sender:" + notification.senderName}
+              date = {notification.createdAt} 
               status={notification.status}
               isSelected={selectedNotifications.includes(notification._id)}
               onSelect={() => handleSelectNotification(notification._id)}
@@ -201,43 +227,48 @@ const NotificationsProfile = () => {
       </div>
 
       {selectedNotifications.length > 0 && (
-
-<div className="absolute bottom-9 right-20 flex items-center justify-center">
-      <button 
-    onClick={handleMarkAsRead}
-    className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:shadow-lg relative hover-parent"
+  <div className="absolute bottom-6  flex space-x-2 z-10"> {/* Wrap in flex container */}
+    <button 
+      onClick={handleMarkAsRead}
+      className="w-9 h-9 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:shadow-lg relative hover-parent"
     >
-    <OnHoverExtraHud name="Read" />
-    <MdBook className="text-xl" />
-  </button>
-  </div>)}
-      {selectedNotifications.length > 0 && (
-        <div className="absolute bottom-9 right-4 flex items-center justify-center">
-      
-          <button 
-            onClick={handleDeleteSelected}
-            className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 hover:shadow-lg relative hover-parent"
-          >
-            <OnHoverExtraHud name="Delete" />
-            <MdDelete className="text-xl" />
-          </button>
-        </div>
-      )}
-      <Pagination
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-      />
+      <OnHoverExtraHud name="Read" />
+      <MdBook className="text-xl" />
+    </button>
+    <button 
+      onClick={handleDeleteSelected}
+      className="w-9 h-9 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 hover:shadow-lg relative hover-parent"
+    >
+      <OnHoverExtraHud name="Delete" />
+      <MdDelete className="text-xl" />
+    </button>
+  </div>
+)}
+          <div>
+         <Pagination
+         totalPages={totalPages}
+         currentPage={currentPage}
+         onPageChange={handlePageChange}
+       />
+       </div>
+ 
     </div>
+
   );
 };
-const NotificationBar = ({ id, message, description, status, isSelected, onSelect, onDelete, notification }) => {
+
+
+
+const NotificationBar = ({ id, message, description, date, status, isSelected, onSelect, onDelete, notification }) => {
   const navigate = useNavigate();
 
-  const handleNavigateToMessage = () => {
+  const handleNavigateToMessage = async () => {
+  //  await markNotificationAsRead(notification._id);
     navigate('/messages', {
       state: {
         notificationData: {
+          notificationId: notification._id,
+          date:date,
           payload: {
             title: message,
             message: notification.payload.message
@@ -248,25 +279,34 @@ const NotificationBar = ({ id, message, description, status, isSelected, onSelec
     });
   };
 
+  if (date) {
+    date = new Date(date).toLocaleString('en-US', {
+      weekday: 'short',    
+      month: 'short',      
+      day: 'numeric',      
+      hour: 'numeric',    
+      minute: 'numeric',   
+      hour12: true         
+    });
+  }
+
   return (
-    <div className="flex items-center space-x-2 py-2">
-     
+    <div className="flex items-center space-x-2 py-1">
       <input
         type="checkbox"
         checked={isSelected}
         onChange={onSelect}
         className="w-4 h-4"
       />
-
-      
-      <div className="flex-grow bg-white rounded-lg flex justify-between items-center px-4 py-1 shadow-md">
-        <div 
-          className={`h-2 w-2 rounded-full ${status === 'read' ? 'bg-green-500' : 'bg-red-500'}`}
-        ></div>
-        <div className="ml-4 overflow-hidden">
-          <p className="font-medium">{message || 'Notification Message'}</p>
+      <div className="flex-grow bg-white rounded-lg flex justify-between items-center px-4 shadow-md h-[60px]"> {/* Set a fixed height */}
+        <div className={`h-2 w-2 rounded-full ${status === 'read' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+        
+        <div className="ml-4 flex-grow overflow-hidden">
+          <p className="font-medium ">{message || 'Notification Message'}</p> {/* Truncate long titles */}
           <p className="text-sm text-stone-500">{description || 'Notification description'}</p>
+          <p className="text-sm text-stone-500">{date || 'Notification date'}</p>
         </div>
+        
         <div className="flex space-x-2">
           <button 
             className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 focus:outline-none hover-parent" 
@@ -284,6 +324,8 @@ const NotificationBar = ({ id, message, description, status, isSelected, onSelec
     </div>
   );
 };
+
+
 
 
 export default NotificationsProfile;

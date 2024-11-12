@@ -9,7 +9,10 @@ const notificationSchema = mongoose.Schema({
   status: { type: String, default: 'unread' }, // 'pending', 'delivered', 'failed'
   retryCount: { type: Number, default: 0 },
   maxRetryAttempts: { type: Number, default: 3 },
-});
+},
+  { timestamps: true }
+);
+
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

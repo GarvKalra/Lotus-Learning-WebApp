@@ -4,6 +4,7 @@ import axios from "axios";
 import GeneralNavbar from "../../../../components/navbar/GeneralNavbar";
 import saveNotification from "../../../../BackendProxy/notificationProxy/saveNotification";
 
+
 const AdminSendNotification = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -86,54 +87,53 @@ console.log(response);
   };
 
   return (
-    <div className="flex flex-col min-h-screen overflow-hidden">
-      <GeneralNavbar />
-      <div className="flex-grow max-w-md mx-auto mt-6 p-4 bg-white shadow-md rounded-md">
-        <h1 className="text-xl font-semibold mb-4">
-          Send {isBulkNotification ? "Bulk Notification" : "Notification"}
-        </h1>
+<div className="flex flex-col items-center min-h-screen overflow-hidden">
+  <GeneralNavbar />
+  <div className="flex-grow w-full max-w-md mt-6 p-4">
+    <h1 className="text-xl font-semibold mb-4">
+      Send {isBulkNotification ? "Bulk Notification" : "Notification"}
+    </h1>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium">Sending To:</label>
-          <ul className="list-disc ml-4 mt-2 space-y-1 overflow-y-auto max-h-24 text-base">
-            {recipients.map((student) => (
-              <li key={student._id} className="text-gray-600">
-                {student.username} ({student.email})
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700">Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter notification title"
-            className="w-full px-3 py-2 border rounded-md text-base"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700">Message</label>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Enter notification message"
-            className="w-full px-3 py-2 border rounded-md text-base"
-            rows="4"
-          ></textarea>
-        </div>
-
-        <button
-          onClick={handleSend}
-          className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
-        >
-          Send Notification{isBulkNotification && "s"}
-        </button>
-      </div>
+    <div className="mb-4">
+      <label className="block text-gray-700 font-medium">Sending To:</label>
+      <ul className="list-disc ml-4 mt-2 space-y-1 overflow-y-auto max-h-24 text-base">
+        {recipients.map((student) => (
+          <li key={student._id} className="text-gray-600">
+            {student.username} ({student.email})
+          </li>
+        ))}
+      </ul>
     </div>
+
+    <div className="mb-4">
+      <label className="block text-gray-700">Title</label>
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Enter notification title"
+        className="px-3 py-2 border rounded-md text-base w-full"
+      />
+    </div>
+
+    <div className="mb-4">
+      <label className="block text-gray-700">Message</label>
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Enter notification message"
+        className="px-3 py-2 border rounded-md text-base w-full h-32"
+      ></textarea>
+    </div>
+
+    <button
+      onClick={handleSend}
+      className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
+    >
+      Send Notification{isBulkNotification && "s"}
+    </button>
+  </div>
+</div>
   );
 };
 

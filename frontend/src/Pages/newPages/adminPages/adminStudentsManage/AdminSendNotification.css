@@ -1,0 +1,85 @@
+* {
+    box-sizing: border-box;
+  }
+  
+  body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  .admin-notification-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  
+  .notification-content {
+    max-width: 600px;
+    width: 100%;
+    margin: 2rem auto;
+    padding: 1rem;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  
+  .label {
+    font-size: 1rem;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  
+  .input-field {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-weight: 400;
+    line-height: 1.5;
+    min-width: 280px;
+  }
+  
+  .recipient-list {
+    max-height: 100px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    line-height: 1.4;
+  }
+  
+  .send-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(to right, #4CAF50, #45a049);
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .send-button:hover {
+    transform: scale(1.05);
+  }
+
+  .recipient-list {
+    overflow-y: auto;
+    max-height: 100px; /* Adjust as needed */
+    scrollbar-width: thin; /* For Firefox */
+  }
+  
+  /* Webkit (Chrome, Safari) */
+  .recipient-list::-webkit-scrollbar {
+    width: 8px;
+  }
+  

@@ -13,6 +13,8 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import getCoursesByProp from "../../BackendProxy/courseProxy/getCoursesByProp";
 import getNotificationsByUserId from "../../BackendProxy/notificationProxy/getNotificationsByUserId";
+import markNotificationAsRead from "../../BackendProxy/notificationProxy/markNotificationAsRead";
+
 const GeneralNavbar = ({ fixed = true }) => {
   const [notificationsDropDown, setNotificationsDropDown] = useState(false);
   const [wishListDropDown, setWishListDropDown] = useState(false);
@@ -47,6 +49,8 @@ const GeneralNavbar = ({ fixed = true }) => {
       }
     }
   };
+
+  
 
   const handleClickOutside = (event) => {
     if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -230,12 +234,18 @@ const GeneralNavbar = ({ fixed = true }) => {
               onMouseOut={() => setNotificationsDropDown(false)}
               className="relative md:block hidden"
             >
-            <Badge badgeContent={unreadCount} color="error" overlap="circular">
-        <CiBellOn className="text-2xl cursor-pointer" />
-      </Badge>
+         <Badge
+  badgeContent={unreadCount}
+  color="error"
+  overlap="circular"
+  className="cursor-pointer" 
+>
+  <CiBellOn className="text-2xl cursor-pointer" /> {}
+</Badge>
               {notificationsDropDown && (
                 <div className="absolute top-[100%] right-0 z-30">
-                  <NotificationsDropDown notifications={notifications}/>
+                  <NotificationsDropDown notifications={notifications}
+                    />
                 </div>
               )}
             </div>
