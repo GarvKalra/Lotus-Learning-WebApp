@@ -22,8 +22,7 @@ const NotificationsDropDown = ({ notifications }) => {
   };
 
   const unreadNotifications = notifications
-    .filter((notification) => notification.status === 'unread')
-    .reverse(); 
+    .filter((notification) => notification.status === 'unread'); 
 
   const formatDate = (date) => {
     return new Date(date).toLocaleString('en-US', {
