@@ -100,8 +100,10 @@ const AdminManageStudents = () => {
 
   const downloadGradesAsZip = async () => {
     try {
+
       const response = await axios.post('http://localhost:5000/course/download-zip-students-grades', {
         studentIds: filteredStudents, 
+
       }, {
         responseType: 'blob', // This ensures you handle the zip file as binary data
       });
@@ -120,6 +122,7 @@ const AdminManageStudents = () => {
 
   const removeStudentFromCourse = async (studentId, studentName) => {
     try {
+
       const isAllCourses = selectedCourse === "";
   
       const confirmation = window.confirm(
@@ -577,6 +580,7 @@ const AdminManageStudents = () => {
         });
       }
   
+
       if (allGrades.length === 0) {
         alert("No grades available for the selected students or courses.");
         return;
@@ -832,6 +836,7 @@ const StudentCard = ({ student, selectedCourse, toggleVisibility, isChecked,hand
       const response = await axios.get(
         `http://localhost:5000/course/get-all-grades/${studentId}`
       );
+
       const gradesData = response.data.data;
   
       if (gradesData.length === 0) {
