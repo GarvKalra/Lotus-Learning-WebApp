@@ -5,25 +5,33 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
 const config = require('./utils/config');
-
+const WebSocket = require('ws'); 
+const http = require('http');
+const { setupWebSocketServer, broadcastNotification } = require('./websocket');
 const graphqlSchema = require('./graphql/schema/schema');
 const graphqlResolvers = require('./graphql/resolvers/resolvers');
 const isAuth = require('./middleware/is-auth');
-// const notificationRoutes = require('./routes/notification');
+ const notificationRoutes = require('./routes/notification');
 const { connectToDatabases } = require('./db/connection');
 // const processNotifications = require('./notification-microservice/worker-service');
 
 const app = express();
+const server = http.createServer(app); // Create an HTTP server
+
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
-app.use(
-  cors({
-    credentials: true,
-    origin: ' http://localhost:3000',
-  })
-);
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  credentials: true,
+};
+
+
+
+// Apply CORS middleware globally before routes
+app.use(cors(corsOptions));
+
 
 const logger = require('./logger');
 const pino = require('pino-http')({
@@ -35,7 +43,7 @@ app.use(cookieParser());
 app.use(isAuth);
 
 
-// app.use('/api', notificationRoutes);
+ app.use('/api', notificationRoutes);
 
 // app.use(
 //   '/graphql',
@@ -59,6 +67,7 @@ const adminRoutes = require('./routes/admin-routes/admin-routes')
 app.use('/admin', adminRoutes);
 const aiRoutes = require('./routes/ai-routes/ai-routes')
 app.use('/ai', aiRoutes);
+app.use('/notification',notificationRoutes);
 
 app.use("/test", (req, res) => {
   res.send("hello world!");
@@ -70,18 +79,16 @@ app.use("/highlight", (req, res) => {
   console.log(selectedText);
 });
 
+setupWebSocketServer(server);
+
 
 
 connectToDatabases()
   .then(() => {
-    app.listen(config.PORT);
-    let test = 5;
-    logger.info(`Server running on port ${config.PORT}`);
-    //console.log(`Server running port ${config.PORT}`);
-  //  logger.debug({test}, 'Error connecting to the database');
-    // processNotifications();
+    server.listen(config.PORT, () => {
+      logger.info(`Server running on port ${config.PORT}`);
+    });
   })
   .catch((err) => {
     logger.error(err, 'Error connecting to the database');
-   // console.error(err);
   });

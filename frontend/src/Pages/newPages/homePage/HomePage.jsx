@@ -35,6 +35,8 @@ const HomePage = () => {
   const getAllAcceptedCourses = async () => {
     try {
       let res;
+      if(authUser)
+      {
       if(authUser.accountType === "instructor" || authUser.accountType === "admin"  )
       {
         console.log("this is instructor or admin");
@@ -51,9 +53,11 @@ const HomePage = () => {
       console.log(res);
       setCourses(res.res);
       setLoadedCourses(true)
+    }
     } catch (error) {
       console.error(error);
     }
+    
   }
 
   return (
