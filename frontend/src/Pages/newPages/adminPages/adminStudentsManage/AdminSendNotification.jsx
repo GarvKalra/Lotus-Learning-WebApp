@@ -54,37 +54,48 @@ const AdminSendNotification = () => {
       fetchRecipients();
     }
   }, [studentIds, navigate]);
-  const handleSend = async () => {
-    if (!title || !message) {
-      alert("Please fill in both title and message.");
-      return;
-    }
 
-    const notificationData = studentIds.map(studentId => ({
-      userId: studentId,
-      type: "admin_notification",
-      payload: {
+ const handleSend = async () => {
+  if (!title || !message) {
+    alert("Please fill in both title and message.");
+    return;
+  }
+
+  const notificationData = studentIds.map(studentId => ({
+    userId: studentId,
+    type: "admin_notification",
+    payload: {
+      title,
+      message,
+    },
+    senderName: sender,
+    status: "unread",
+  }));
+
+  try {
+    // Call saveNotification with the notification data (array for bulk, single object if one)
+    const response = await saveNotification(isBulkNotification ? notificationData : notificationData[0]);
+    console.log(response);
+
+    if (response) {
+      alert(`Notification sent successfully to ${isBulkNotification ? "selected students" : "the student"}!`);
+
+      await axios.post("http://localhost:5000/admin/send-email-notification", {
         title,
         message,
-      },
-      senderName:sender,
-      status: "unread",
-    }));
-
-    try {
-      // Call saveNotification with the notification data (array for bulk, single object if one)
-      const response = await saveNotification(isBulkNotification ? notificationData : notificationData[0]);
-console.log(response);
-      if (response) {
-        alert(`Notification sent successfully to ${isBulkNotification ? "selected students" : "the student"}!`);
-      } else {
-        alert("Failed to send notification.");
-      }
-    } catch (error) {
-      console.error("Failed to send notification", error);
-      alert("Failed to send notification. Please try again.");
+        recipients: recipients.map(recipient => recipient.email),
+      }).catch((error) => {
+        console.error("Failed to send email notification:", error);
+      });
+    } else {
+      alert("Failed to send notification.");
     }
-  };
+  } catch (error) {
+    console.error("Failed to send notification", error);
+    alert("Failed to send notification. Please try again.");
+  }
+};
+  
 
   return (
 <div className="flex flex-col items-center min-h-screen overflow-hidden">
