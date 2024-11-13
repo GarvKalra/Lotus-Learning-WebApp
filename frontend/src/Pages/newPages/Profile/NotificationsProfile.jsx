@@ -93,9 +93,8 @@ const NotificationsProfile = () => {
     }
   }, [authUser]);
   
-  // Remove reversedNotifications and use notifications directly
- 
-  
+
+
 
   const updateUnreadCount = (notifications) => {
     const unread = notifications.filter(notification => notification.status === 'unread').length;
@@ -267,12 +266,11 @@ const NotificationBar = ({ id, message, description, date, status, isSelected, o
   const navigate = useNavigate();
 
   const handleNavigateToMessage = async () => {
-  //  await markNotificationAsRead(notification._id);
     navigate('/messages', {
       state: {
         notificationData: {
           notificationId: notification._id,
-          date:date,
+          date: date,
           payload: {
             title: message,
             message: notification.payload.message
@@ -285,12 +283,12 @@ const NotificationBar = ({ id, message, description, date, status, isSelected, o
 
   if (date) {
     date = new Date(date).toLocaleString('en-US', {
-      weekday: 'short',    
-      month: 'short',      
-      day: 'numeric',      
-      hour: 'numeric',    
-      minute: 'numeric',   
-      hour12: true         
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
     });
   }
 
@@ -302,11 +300,11 @@ const NotificationBar = ({ id, message, description, date, status, isSelected, o
         onChange={onSelect}
         className="w-4 h-4"
       />
-      <div className="flex-grow bg-white rounded-lg flex justify-between items-center px-4 shadow-md h-[60px]"> {/* Set a fixed height */}
+      <div className={`flex-grow rounded-lg flex justify-between items-center px-4 shadow-md h-[60px] ${isSelected ? 'highlight' : 'default-bg'}`}>
         <div className={`h-2 w-2 rounded-full ${status === 'read' ? 'bg-green-500' : 'bg-red-500'}`}></div>
         
         <div className="ml-4 flex-grow overflow-hidden">
-          <p className="font-medium ">{message || 'Notification Message'}</p> {/* Truncate long titles */}
+          <p className="font-medium">{message || 'Notification Message'}</p>
           <p className="text-sm text-stone-500">{description || 'Notification description'}</p>
           <p className="text-sm text-stone-500">{date || 'Notification date'}</p>
         </div>
@@ -328,7 +326,6 @@ const NotificationBar = ({ id, message, description, date, status, isSelected, o
     </div>
   );
 };
-
 
 
 
