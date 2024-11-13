@@ -6,6 +6,10 @@ import getEnrollmentData from "../../../../BackendProxy/courseProxy/getEnrollmen
 import completeLesson from "../../../../BackendProxy/courseProxy/completeLesson"; // API to complete a lesson
 import BarLoader from "../../../../components/loaders/BarLoader";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import generateCertificate from "../../../../BackendProxy/courseProxy/generateCertificate";
+import { jsPDF } from 'jspdf';
+import { useSelector } from "react-redux";
+
 
 const LearningCoursePage = ({ userId }) => {
   const navigate = useNavigate();
@@ -18,6 +22,10 @@ const LearningCoursePage = ({ userId }) => {
   const [isLastLesson, setIsLastLesson] = useState(false); // Track if it's the last lesson
   const [isMenuOpen, setIsMenuOpen] = useState(true); // State for menu visibility
   const [loaded, setLoaded] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [courseName, setCourseName] = useState("");
+  const authUser = useSelector((state) => state.user);
+
 
   useEffect(() => {
     if (userId && courseId) {
@@ -37,7 +45,6 @@ const LearningCoursePage = ({ userId }) => {
         setLoaded(true);
         return;
       }
-
       const updatedLessons = course.lessons.map((lesson) => ({
         ...lesson,
         isCompleted: enrollment.completedLessons.includes(lesson._id.toString()),
@@ -94,11 +101,73 @@ const LearningCoursePage = ({ userId }) => {
       throw error;
     }
   };
+  const generateCertificate = (userName, courseName) => {
+    const doc = new jsPDF("landscape"); // Set orientation to landscape
+
+    // Set up colors for background elements
+    const primaryColor = [70, 130, 180]; // Steel blue for title and main text
+    const lightColor = [220, 230, 240]; // Light blue for background design
+
+    // Background rectangle
+    doc.setFillColor(...lightColor);
+    doc.rect(10, 10, 270, 180, "F"); // Light background rectangle to frame content
+
+    // Decorative circle on the left
+    doc.setFillColor(...primaryColor);
+    doc.circle(30, 30, 20, "F"); // Filled circle for a modern look
+
+    // Title text
+    doc.setFontSize(30);
+    doc.setFont("times", "bold");
+    doc.setTextColor(...primaryColor);
+    doc.text("Certificate of Completion", 148, 50, { align: "center" });
+
+    // Subtitle
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(60, 60, 60); // Dark gray
+    doc.text("This certifies that", 148, 70, { align: "center" });
+
+    // User's name in large font
+    doc.setFontSize(24);
+    doc.setFont("times", "bold");
+    doc.setTextColor(...primaryColor);
+    doc.text(userName, 148, 90, { align: "center" });
+
+    // Course completion text
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(60, 60, 60);
+    doc.text(`has successfully completed the course:`, 148, 110, { align: "center" });
+
+    // Course name in bold
+    doc.setFontSize(18);
+    doc.setFont("times", "bold");
+    doc.setTextColor(...primaryColor);
+    doc.text(courseName, 148, 130, { align: "center" });
+
+    // Date and organization text
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const completionDate = new Date().toLocaleDateString();
+    doc.text(`Date: ${completionDate}`, 30, 160); // Date at the bottom left
+    doc.text("Certified by: PHC Institute", 250, 160, { align: "right" });
+
+    // Optional logo or seal (add a small logo if you have one)
+    // doc.addImage(logo, "PNG", 120, 140, 50, 50);
+
+    // Save the PDF
+    const fileName = `Certificate_${userName}_${courseName}.pdf`;
+    doc.save(fileName);
+};
+
+  
 
   const handleNextLesson = async () => {
     try {
+      console.log("handleNextLesson is called. ")
       await markLessonAsCompleted(enrollmentData._id, courseId, selectedLesson._id);
-
+      
       const updatedLessons = enrollmentData.course.lessons.map((lesson) => {
         if (lesson._id === selectedLesson._id) {
           return { ...lesson, isCompleted: true };
@@ -112,9 +181,15 @@ const LearningCoursePage = ({ userId }) => {
       }));
 
       const allLessonsCompleted = updatedLessons.every((lesson) => lesson.isCompleted);
-
+      console.log("the value of allLessonsCompleted is"+ allLessonsCompleted)
+      console.log("userid and course id are"+ userId + "and"+ courseId)
       if (allLessonsCompleted) {
+        //const certificateUrl = await generateCertificate(userId, courseId);
+        //navigate("/course-complete", { state: { certificateUrl } });
         navigate("/course-complete");
+        generateCertificate(authUser.username, courseName)
+
+
       } else {
         let nextLessonIndex = currentLessonIndex + 1;
         while (nextLessonIndex < updatedLessons.length && updatedLessons[nextLessonIndex].isCompleted) {
