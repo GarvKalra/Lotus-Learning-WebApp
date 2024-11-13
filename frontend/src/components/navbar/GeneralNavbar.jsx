@@ -32,7 +32,7 @@ const GeneralNavbar = ({ fixed = true }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const BASE_WS_URL = 'ws://localhost:5000/notification';
+  const BASE_WS_URL = 'ws://localhost:5000';
 
   const unreadCount = notifications.filter(notification => notification.status === "unread").length;
 
@@ -72,10 +72,10 @@ const GeneralNavbar = ({ fixed = true }) => {
       setError(null);
       try {
         if (authUser && authUser._id && notifications.length === 0 && !hasFetched.current) {
-          // Fetch notifications from backend
           const userNotifications = await getNotificationsByUserId(authUser._id);
+          
           setNotifications(userNotifications);
-          hasFetched.current = true; // Mark as fetched to avoid repeat fetches
+          hasFetched.current = true; // Prevent repeat fetches
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -85,11 +85,11 @@ const GeneralNavbar = ({ fixed = true }) => {
       }
     };
   
-    // Only fetch if notifications are empty and authUser._id is set
     if (!hasFetched.current && authUser && authUser._id) {
       fetchNotifications();
     }
-  }, [authUser, notifications.length]); // Updated dependency array
+  }, [authUser, notifications.length]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 0 && !isFixed) {
@@ -119,48 +119,48 @@ const GeneralNavbar = ({ fixed = true }) => {
     }
   }, [query, isLogedIn]); 
 
-  useEffect(() => {
-    if (isLogedIn) {
-      const ws = new WebSocket(BASE_WS_URL);
+useEffect(() => {
+  if (isLogedIn) {
+    const ws = new WebSocket(BASE_WS_URL);
 
-      ws.onopen = () => {
-        console.log("Connected to WebSocket");
-      };
+    ws.onopen = () => {
+      console.log("Connected to WebSocket");
+    };
 
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
 
-        if (data.action === 'new' && data.notification.userId === authUser._id) {
-          setNotifications((prevNotifications) => [data.notification, ...prevNotifications]);
-        } else if (data.action === 'delete') {
-          setNotifications((prevNotifications) =>
-            prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
-          );
-        } else if (data.action === 'update') {
-          setNotifications((prevNotifications) =>
-            prevNotifications.map(notification =>
-              data.notificationIds.includes(notification._id)
-                ? { ...notification, status: 'read' }
-                : notification
-            )
-          );
-        }
-      };
+      if (data.action === 'new' && data.notification.userId === authUser._id) {
+        // Prepend new notifications from WebSocket
+        setNotifications(prevNotifications => [data.notification, ...prevNotifications]);
+      } else if (data.action === 'delete') {
+        setNotifications(prevNotifications =>
+          prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
+        );
+      } else if (data.action === 'update') {
+        setNotifications(prevNotifications =>
+          prevNotifications.map(notification =>
+            data.notificationIds.includes(notification._id)
+              ? { ...notification, status: 'read' }
+              : notification
+          )
+        );
+      }
+    };
 
-      ws.onclose = () => {
-        console.log("WebSocket connection closed");
-      };
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
 
-      ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
-      };
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
 
-      return () => {
-        ws.close();
-      };
-    }
-  }, [isLogedIn]);
-
+    return () => {
+      ws.close();
+    };
+  }
+}, [isLogedIn]);
 
   return (
     <div

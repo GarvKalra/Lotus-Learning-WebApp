@@ -22,6 +22,20 @@ const MessageProfile = () => {
         };
     }, []);
 
+    useEffect(() => {
+        // Mark notification as read if notificationData is available
+        if (notificationData && notificationData.notificationId) {
+            markNotificationAsRead(notificationData.notificationId)
+                .then(() => {
+                    console.log(`Notification ${notificationData.notificationId} marked as read`);
+                })
+                .catch((error) => {
+                    console.error("Failed to mark notification as read:", error);
+                });
+        }
+    }, [notificationData]);
+
+
     return (
         <>
             <GeneralNavbar />

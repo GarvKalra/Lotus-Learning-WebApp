@@ -94,6 +94,8 @@ const NotificationsProfile = () => {
   }, [authUser]);
   
 
+
+
   const updateUnreadCount = (notifications) => {
     const unread = notifications.filter(notification => notification.status === 'unread').length;
     setUnreadCount(unread);
