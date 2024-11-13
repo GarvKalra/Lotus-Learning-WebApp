@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import logo from "../../Images/LotusLogoColour.webp";
 import logoText from "../../Images/lotusletters.webp";
 import styles from "../../Styles";
+import Badge from "@mui/material/Badge"; 
 import { MdOutlineSearch } from "react-icons/md";
 import { CiHeart } from "react-icons/ci";
 import { CiBellOn } from "react-icons/ci";
@@ -11,6 +12,8 @@ import ProfileDropDown from "./profile-dropdown/ProfileDropDown";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import getCoursesByProp from "../../BackendProxy/courseProxy/getCoursesByProp";
+import getNotificationsByUserId from "../../BackendProxy/notificationProxy/getNotificationsByUserId";
+import markNotificationAsRead from "../../BackendProxy/notificationProxy/markNotificationAsRead";
 
 const GeneralNavbar = ({ fixed = true }) => {
   const [notificationsDropDown, setNotificationsDropDown] = useState(false);
@@ -20,11 +23,18 @@ const GeneralNavbar = ({ fixed = true }) => {
   const [isLogedIn, setIsLogedIn] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const hasFetched = useRef(false);
 
   const searchRef = useRef(null); 
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const authUser = useSelector((state) => state.user);
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const BASE_WS_URL = 'ws://localhost:5000';
+
+  const unreadCount = notifications.filter(notification => notification.status === "unread").length;
 
   const handleSearch = async () => {
     if (isLogedIn && query.trim() !== "" && authUser) { 
@@ -39,6 +49,8 @@ const GeneralNavbar = ({ fixed = true }) => {
       }
     }
   };
+
+  
 
   const handleClickOutside = (event) => {
     if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -55,6 +67,30 @@ const GeneralNavbar = ({ fixed = true }) => {
   }, [authUser]);
 
   useEffect(() => {
+    const fetchNotifications = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        if (authUser && authUser._id && notifications.length === 0 && !hasFetched.current) {
+          const userNotifications = await getNotificationsByUserId(authUser._id);
+          
+          setNotifications(userNotifications);
+          hasFetched.current = true; // Prevent repeat fetches
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+        setError("Failed to load notifications");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    if (!hasFetched.current && authUser && authUser._id) {
+      fetchNotifications();
+    }
+  }, [authUser, notifications.length]);
+
+  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 0 && !isFixed) {
         setIsFixed(true);
@@ -62,7 +98,6 @@ const GeneralNavbar = ({ fixed = true }) => {
         setIsFixed(false);
       }
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -83,6 +118,49 @@ const GeneralNavbar = ({ fixed = true }) => {
       setResults([]); 
     }
   }, [query, isLogedIn]); 
+
+useEffect(() => {
+  if (isLogedIn) {
+    const ws = new WebSocket(BASE_WS_URL);
+
+    ws.onopen = () => {
+      console.log("Connected to WebSocket");
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.action === 'new' && data.notification.userId === authUser._id) {
+        // Prepend new notifications from WebSocket
+        setNotifications(prevNotifications => [data.notification, ...prevNotifications]);
+      } else if (data.action === 'delete') {
+        setNotifications(prevNotifications =>
+          prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
+        );
+      } else if (data.action === 'update') {
+        setNotifications(prevNotifications =>
+          prevNotifications.map(notification =>
+            data.notificationIds.includes(notification._id)
+              ? { ...notification, status: 'read' }
+              : notification
+          )
+        );
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }
+}, [isLogedIn]);
 
   return (
     <div
@@ -156,10 +234,18 @@ const GeneralNavbar = ({ fixed = true }) => {
               onMouseOut={() => setNotificationsDropDown(false)}
               className="relative md:block hidden"
             >
-              <CiBellOn className="text-2xl cursor-pointer" />
+         <Badge
+  badgeContent={unreadCount}
+  color="error"
+  overlap="circular"
+  className="cursor-pointer" 
+>
+  <CiBellOn className="text-2xl cursor-pointer" /> {}
+</Badge>
               {notificationsDropDown && (
                 <div className="absolute top-[100%] right-0 z-30">
-                  <NotificationsDropDown />
+                  <NotificationsDropDown notifications={notifications}
+                    />
                 </div>
               )}
             </div>

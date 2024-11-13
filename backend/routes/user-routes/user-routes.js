@@ -497,6 +497,37 @@ router.post('/update-institution-code', async (req, res, next) => {
     }
 });
 
+router.post('/update-only-institution-code', async (req, res) => {
+    try {
+        console.log("Request body:", req.body);
+
+        const { _id, code } = req.body;
+
+        // Find the user by their ID
+        const user = await User.findById(_id);
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Update the user's institution code
+        user.institution.code = code;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Institution code updated successfully',
+            user: user,
+        });
+    } catch (error) {
+        console.error("Error updating institution code:", error);
+        res.status(400).json({
+            success: false,
+            error: error.message,
+        });
+    }
+});
+
 //update password for settingsprofile
 router.post('/update-password', async (req, res, next) => {
     try {
