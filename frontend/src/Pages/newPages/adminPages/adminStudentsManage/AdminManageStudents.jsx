@@ -710,12 +710,18 @@ const AdminManageStudents = () => {
   </button>
      
 
-        <button
-    onClick={toggleMultiVisibility}
-   className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
-  >
-    Toggle Visibility 
-  </button>
+  <button
+  onClick={() => {
+    if (selectedStudents.length === 0) {
+      alert("Please select at least one student to toggle visibility.");
+    } else {
+      toggleMultiVisibility();
+    }
+  }}
+  className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
+>
+  Toggle Visibility 
+</button>
   <button
     onClick={() => {
       if (selectedStudents.length === 0) {
@@ -918,83 +924,74 @@ const StudentCard = ({ student, selectedCourse, toggleVisibility, isChecked,hand
     navigate(`/admin/send-notification`, { state: { studentIds: [studentId], sender:authUser.username } });
   };
 
+  const rowStyle = isChecked(student._id)
+    ? { backgroundColor: '#b2d8d8' } 
+    : { backgroundColor: 'white' };  
 
   return (
-    <tr>
-    <td className="flex items-center space-x-2">
-      <input
-        type="checkbox"
-        checked={isChecked(student._id)}
-        onChange={() => handleCheckboxChange(student._id)}
-        className="w-5 h-5"
-      />
-      <span>{student.username || "Unknown"}</span>
-    </td>
-    <td>{student.email || "No Email"}</td>
-    <td className="w-[30%]">
-  <div className="flex items-center space-x-2">
-    <span className="text-sm text-gray-600 w-12 text-right">
-      {progress.toFixed(1)}%
-    </span>
-    <div className="flex-grow">
-      <ProgressBar progress={progress} />
-    </div>
-  </div>
-</td>
+    <tr style={rowStyle}>
+      <td className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          checked={isChecked(student._id)}
+          onChange={() => handleCheckboxChange(student._id)}
+          className="w-5 h-5"
+        />
+        <span>{student.username || "Unknown"}</span>
+      </td>
+      <td>{student.email || "No Email"}</td>
+      <td className="w-[30%]">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-600 w-12 text-right">
+            {progress.toFixed(1)}%
+          </span>
+          <div className="flex-grow">
+            <ProgressBar progress={progress} />
+          </div>
+        </div>
+      </td>
 
-    <td className="flex space-x-6 items-center justify-end">
-    
-
-    {showVisibilityIcon && (
-  <button
-    className="p-2 hover:bg-green-200 transition-all bg-green-100 rounded-full cursor-pointer flex items-center justify-center relative focus:outline-none hover-parent"
-    onClick={() => toggleVisibility(enrollmentId, visible)}
-    aria-label={visible ? "Hide" : "Show"}
-  >
-    {visible ? (
-      <FiEye className="text-green-600" />
-    ) : (
-      <FiEyeOff className="text-gray-600" />
-    )}
-    <OnHoverExtraHud name={visible ? "Visible" : "Hidden"} />
-  </button>
-)}
-{/* Send Notification Button */}
-<button
+      <td className="flex space-x-6 items-center justify-end">
+        {showVisibilityIcon && (
+          <button
+            className="p-2 hover:bg-green-200 transition-all bg-green-100 rounded-full cursor-pointer flex items-center justify-center relative focus:outline-none hover-parent"
+            onClick={() => toggleVisibility(enrollmentId, visible)}
+            aria-label={visible ? "Hide" : "Show"}
+          >
+            {visible ? (
+              <FiEye className="text-green-600" />
+            ) : (
+              <FiEyeOff className="text-gray-600" />
+            )}
+            <OnHoverExtraHud name={visible ? "Visible" : "Hidden"} />
+          </button>
+        )}
+        <button
           className="p-2 rounded-full transition-all bg-yellow-100 hover:bg-yellow-200 cursor-pointer flex items-center justify-center relative focus:outline-none hover-parent"
           onClick={() => handleSendNotification(student._id)}
           aria-label="Send Notification"
         >
           <FiBell className="text-yellow-600" />
-          <OnHoverExtraHud name={"Send Notification"} />
+          <OnHoverExtraHud name="Send Notification" />
         </button>
-
-      {/* Remove Button */}
-      <button
-  className="p-2 hover:bg-blue-200 transition-all bg-blue-100 rounded-full cursor-pointer flex items-center justify-center relative focus:outline-none hover-parent"
-  onClick={() => removeStudentFromCourse(student._id, student.username)}
-  aria-label="Delete"
->
-  <RiDeleteBin7Fill className="text-md text-blue-700" />
-  <OnHoverExtraHud name={"Remove"} />
-</button>
-      {/* Edit Button 
-      <div className="p-2 hover:bg-red-200 transition-all bg-red-100 rounded-full cursor-pointer hover-parent">
-        <RiEdit2Fill className="text-md text-red-600" />
-        <OnHoverExtraHud name={"Edit"} />
-      </div>
-  */}
-      {/* Download Grades Button */}
-      <button
-  className="p-2 rounded-full transition-all bg-green-100 hover:bg-green-200 cursor-pointer flex items-center justify-center relative focus:outline-none hover-parent"
-  onClick={() => downloadGrades(student._id, student.username)}
-  aria-label="Download Grades"
->
-  <FiDownload className="text-md text-green-600" />
-  <OnHoverExtraHud name={"Download Grades"} />
-</button>
-    </td>
-  </tr>
+        <button
+          className="p-2 hover:bg-blue-200 transition-all bg-blue-100 rounded-full cursor-pointer flex items-center justify-center relative focus:outline-none hover-parent"
+          onClick={() => removeStudentFromCourse(student._id, student.username)}
+          aria-label="Delete"
+        >
+          <RiDeleteBin7Fill className="text-md text-blue-700" />
+          <OnHoverExtraHud name="Remove" />
+        </button>
+        <button
+          className="p-2 rounded-full transition-all bg-green-100 hover:bg-green-200 cursor-pointer flex items-center justify-center relative focus:outline-none hover-parent"
+          onClick={() => downloadGrades(student._id, student.username)}
+          aria-label="Download Grades"
+        >
+          <FiDownload className="text-md text-green-600" />
+          <OnHoverExtraHud name="Download Grades" />
+        </button>
+      </td>
+    </tr>
   );
 };
 
