@@ -4,10 +4,13 @@ import GeneralFooter from "../../../../components/footer/GeneralFooter";
 import Rating from "react-rating";
 import { FaStar } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const CourseCompletion = () => {
   const navigate = useNavigate();
   const [rating, setRating] = useState(0);
+  const location = useLocation();
+  const certificateUrl = location.state?.certificateUrl;
 
   const handleSubmitRating = () => {
     console.log(`User rated the course ${rating} stars`);
@@ -30,6 +33,8 @@ const CourseCompletion = () => {
           Skip
         </button>
         <h2 className="text-2xl font-bold mb-4">Congratulations for completing the course!</h2>
+        <p>Your Certificate has been downloaded.</p>
+        
         <p className="mb-2">Rate this course:</p>
         <Rating
           emptySymbol={<FaStar size={30} className="text-gray-300" />}

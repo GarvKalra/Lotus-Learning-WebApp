@@ -28,6 +28,7 @@
     "crypto-browserify": "^3.12.0",
     "firebase": "^10.7.1",
     "graphql": "^16.8.0",
+    "jspdf": "^2.5.2",
     "nodemailer": "^6.9.13",
     "pako": "^2.1.0",
     "react": "^18.2.0",
