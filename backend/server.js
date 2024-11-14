@@ -15,12 +15,15 @@ const isAuth = require('./middleware/is-auth');
 const { connectToDatabases } = require('./db/connection');
 // const processNotifications = require('./notification-microservice/worker-service');
 
+
+
 const app = express();
 const server = http.createServer(app); // Create an HTTP server
 
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+
 
 const corsOptions = {
   origin: 'http://localhost:3000',
@@ -68,6 +71,44 @@ app.use('/admin', adminRoutes);
 const aiRoutes = require('./routes/ai-routes/ai-routes')
 app.use('/ai', aiRoutes);
 app.use('/notification',notificationRoutes);
+
+const studentRoutes = require('./routes/studentRoutes');
+app.use('/api/students', studentRoutes);
+// app.use((err, req, res, next) => {
+//   console.error(err.stack);
+//   res.status(500).json({ 
+//     success: false, 
+//     message: 'Something went wrong!' 
+//   });
+// });
+
+// app.put('/admin/get-students/:email', async (req, res) => {
+//   const { email } = req.params;
+//   const { status } = req.body;
+
+//   // Locate and update the student by email
+//   const student = await student.findOneAndUpdate({ email }, { status }, { new: true });
+//   if (!student) {
+//     return res.status(404).json({ error: 'Student not found' });
+//   }
+//   res.json(student);
+// });
+// app.put('/api/students/:id', async (req, res) => {
+//   const { id } = req.params;
+//   const { status } = req.body;
+
+//   try {
+//     const student = await student.findByIdAndUpdate(id, { status }, { new: true });
+//     if (!student) {
+//       return res.status(404).json({ error: 'Student not found' });
+//     }
+//     res.json({ message: 'Student status updated', student });
+//   } catch (error) {
+//     console.error('Error updating student status:', error);
+//     res.status(500).json({ error: 'Failed to update student status' });
+//   }
+// });
+
 
 app.use("/test", (req, res) => {
   res.send("hello world!");

@@ -179,6 +179,9 @@ function App() {
             <Route path="/home" element={<HomePage/>}/>
             {/* NOT FOUND PAGE 404 */}
             <Route path="*" element={<NotFoundPage/>}/>
+
+            
+            
           </Routes>
         </AuthProvider>
     }
