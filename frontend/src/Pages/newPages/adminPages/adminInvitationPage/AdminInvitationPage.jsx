@@ -41,7 +41,7 @@ const AdminInvitationPage = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get(`http://localhost:5001/api/students/${institutionCode}`);
+      const response = await axios.get(process.env.REACT_APP_API_URL + `api/students/${institutionCode}`);
       setStudents(response.data);
     } catch (error) {
       console.error("Error fetching students:", error);
@@ -76,7 +76,7 @@ const AdminInvitationPage = () => {
     console.log("uploaded");
     try {
     
-      const response = await axios.post(`http://localhost:5001/api/students/upload?institutionCode=${institutionCode}`, formData, {
+      const response = await axios.post(process.env.REACT_APP_API_URL + `api/students/upload?institutionCode=${institutionCode}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -99,13 +99,13 @@ const AdminInvitationPage = () => {
     // }
     try {
       // Get invited students
-      const studentsInvited = await axios.get(`http://localhost:5001/api/students/${institutionCode}`);
+      const studentsInvited = await axios.get(process.env.REACT_APP_API_URL + `api/students/${institutionCode}`);
       console.log("Invited students:", studentsInvited.data);
 
       // Get existing students
       const code = institutionCode;
       console.log(code);
-      const existingStudentsResponse = await axios.post('http://localhost:5001/admin/get-students', { code });
+      const existingStudentsResponse = await axios.post(process.env.REACT_APP_API_URL + 'admin/get-students', { code });
       const existingStudents = existingStudentsResponse.data;
       console.log("Existing students:", existingStudents.data);
 
@@ -121,7 +121,7 @@ const AdminInvitationPage = () => {
             console.log(`Updating status for ${invitedStudent.email}`);
 
             const response = await axios.post(
-              'http://localhost:5001/api/students/update-status',
+              process.env.REACT_APP_API_URL + 'api/students/update-status',
                { email: invitedStudent.email }
             );
 

@@ -4,6 +4,8 @@ const Notification = require('../../backend/models/Notification')
 const {broadcastNotification} = require('../websocket')
 
 const router = express.Router();
+
+/*
 const {
   handleNotificationTrigger,
 } = require('../notification-microservice/notification-microservice');
@@ -23,7 +25,7 @@ router.post('/trigger-notification', (req, res) => {
         .json({ error: 'Error triggering notification', details: error });
     });
 });
-
+*/
 
 // POST route to save notification data
 router.post('/save-notification', async (req, res) => {
