@@ -99,7 +99,7 @@ const AdminInvitationPage = () => {
     // }
     try {
       // Get invited students
-      const studentsInvited = await axios.get('http://localhost:5001/api/students');
+      const studentsInvited = await axios.get(`http://localhost:5001/api/students/${institutionCode}`);
       console.log("Invited students:", studentsInvited.data);
 
       // Get existing students
@@ -122,7 +122,7 @@ const AdminInvitationPage = () => {
 
             const response = await axios.post(
               'http://localhost:5001/api/students/update-status',
-              // { email: invitedStudent.email }
+               { email: invitedStudent.email }
             );
 
             if (response.data.success) {
