@@ -68,6 +68,7 @@ const AdminInvitationPage = () => {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('institutionCode', institutionCode);
 
     try {
       const response = await axios.post('http://localhost:5001/api/students/upload', formData, {

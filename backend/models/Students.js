@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
+    institutionCode: {
+        type: String,
+        required: true,
+    }, 
     email: {
         type: String,
         required: true,

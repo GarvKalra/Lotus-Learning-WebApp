@@ -7,6 +7,7 @@ const User = require("../models/User.js");
 const Students = require('../models/Students.js');
 
 
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -15,6 +16,7 @@ const upload = multer({ storage });
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
+    const { institutionCode } = req.body;
 
     if (!file) {
       return res.status(400).json({ message: "No file uploaded." });
@@ -37,7 +39,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return await Student.updateOne(
         { email },
         {
-          $setOnInsert: { email, sentOn: new Date(), status: "Pending" },
+          $setOnInsert: { institutionCode, email, sentOn: new Date(), status: "Pending" },
         },
         { upsert: true } //insert if not found, do nothing if found
       );
@@ -59,6 +61,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 router.get('/:institutionCode', async (req, res) => {
   try {
     const institutionCode = req.params.institutionCode;
+    console.debug(institutionCode);
     const students = await Students.find({institutionCode});
     res.json(students);
   } catch (error) {
