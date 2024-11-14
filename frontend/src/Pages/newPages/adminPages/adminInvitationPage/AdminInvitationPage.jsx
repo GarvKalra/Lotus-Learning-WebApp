@@ -6,6 +6,7 @@ import { FaSortAlphaDownAlt } from "react-icons/fa";
 import { IoMdSearch } from "react-icons/io";
 import { SiGooglesheets } from "react-icons/si";
 import axios from "axios";
+import { useAuth } from "../../../../context/auth-context";
 
 
 const AdminInvitationPage = () => {
@@ -13,7 +14,9 @@ const AdminInvitationPage = () => {
   const [file, setFile] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
+  const [institutionCode, setInstitutionCode] = useState(null);
 
+  const { authuser } = useAuth();
   const navigate = useNavigate();
   const { type } = useParams();
 
@@ -21,8 +24,18 @@ const AdminInvitationPage = () => {
     if (!type) {
       navigate("/admin");
     }
+    if (authuser?.institution?.code) {
+      setInstitutionCode(authuser.institution.code); // Set the institution code dynamically
+      console.log(institutionCode);
+    }
     fetchStudents();
   }, [type]);
+
+  useEffect(() => {
+    if (institutionCode) {
+      console.log("Institution Code:", institutionCode);  //check if it finds institution code
+    }
+  }, [institutionCode]);
 
   const fetchStudents = async () => {
     try {
@@ -72,13 +85,18 @@ const AdminInvitationPage = () => {
   //const existingStudents = getStudents;             await axios.get('/admin/get-students'); // for getting all users from mongo
 
   const handleStudentLogin = async () => {
+    // if (!institutionCode) {
+    //   alert("Institution code is missing.");
+    //   return;
+    // }
     try {
       // Get invited students
       const studentsInvited = await axios.get('http://localhost:5001/api/students');
       console.log("Invited students:", studentsInvited.data);
 
       // Get existing students
-      const code = 777777;
+      const code = institutionCode;
+      console.log(code);
       const existingStudentsResponse = await axios.post('http://localhost:5001/admin/get-students', { code });
       const existingStudents = existingStudentsResponse.data;
       console.log("Existing students:", existingStudents.data);
@@ -143,6 +161,7 @@ const AdminInvitationPage = () => {
   const filteredStudents = students.filter(student =>
     student.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  console.log(filteredStudents);
 
   return (
     <div className="relative h-full">
@@ -221,7 +240,7 @@ const AdminInvitationPage = () => {
                   <td className="py-2">{new Date(student.sentOn).toLocaleString()}</td>
                   <td className="py-2">
                     <div className="flex justify-end">
-                      <div className={`px-2 py-1 text-sm flex items-center justify-center ${student.status === "Accepted" ? "bg-green-500" : "bg-yellow-500"} rounded-full`}>
+                      <div className={`px-2 py-1 text-sm flex items-center justify-center ${student.status === "accepted" ? "bg-green-500" : "bg-yellow-500"} rounded-full`}>
                         <p className={`font-medium ${student.status === "Accepted" ? "text-green-100" : "text-yellow-100"}`}>
                           {student.status}
                         </p>
