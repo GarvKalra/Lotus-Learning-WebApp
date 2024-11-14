@@ -56,9 +56,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 //fetch all students
-router.get('/', async (req, res) => {
+router.get('/:institutionCode', async (req, res) => {
   try {
-    const students = await Students.find();
+    const institutionCode = req.params.institutionCode;
+    const students = await Students.find({institutionCode});
     res.json(students);
   } catch (error) {
     console.error('Error fetching students:', error);

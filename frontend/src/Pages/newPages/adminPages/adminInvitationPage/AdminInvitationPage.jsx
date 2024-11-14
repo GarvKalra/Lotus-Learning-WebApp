@@ -7,6 +7,7 @@ import { IoMdSearch } from "react-icons/io";
 import { SiGooglesheets } from "react-icons/si";
 import axios from "axios";
 import { useAuth } from "../../../../context/auth-context";
+import { useSelector } from "react-redux";
 
 
 const AdminInvitationPage = () => {
@@ -16,7 +17,7 @@ const AdminInvitationPage = () => {
   const [sortDirection, setSortDirection] = useState("asc");
   const [institutionCode, setInstitutionCode] = useState(null);
 
-  const { authuser } = useAuth();
+  const authUser = useSelector((state) => state.user);
   const navigate = useNavigate();
   const { type } = useParams();
 
@@ -24,22 +25,23 @@ const AdminInvitationPage = () => {
     if (!type) {
       navigate("/admin");
     }
-    if (authuser?.institution?.code) {
-      setInstitutionCode(authuser.institution.code); // Set the institution code dynamically
-      console.log(institutionCode);
+    if (authUser?.institution?.code) {
+      setInstitutionCode(authUser.institution.code); // Set the institution code dynamically
+      console.log(authUser.institution.code);
     }
-    fetchStudents();
   }, [type]);
+
 
   useEffect(() => {
     if (institutionCode) {
+      fetchStudents();
       console.log("Institution Code:", institutionCode);  //check if it finds institution code
     }
   }, [institutionCode]);
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:5001/api/students');
+      const response = await axios.get(`http://localhost:5001/api/students/${institutionCode}`);
       setStudents(response.data);
     } catch (error) {
       console.error("Error fetching students:", error);
