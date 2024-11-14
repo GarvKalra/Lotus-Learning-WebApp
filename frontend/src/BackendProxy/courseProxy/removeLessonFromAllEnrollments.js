@@ -1,5 +1,5 @@
 import axios from 'axios';
-const BASE_URL = "http://localhost:5000/course";
+const BASE_URL = process.env.REACT_APP_API_URL + 'course';
 
 const removeLessonFromAllEnrollments = async (courseId,lessonId) => {
   try {

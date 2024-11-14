@@ -101,7 +101,7 @@ const AdminManageStudents = () => {
   const downloadGradesAsZip = async () => {
     try {
 
-      const response = await axios.post('http://localhost:5000/course/download-zip-students-grades', {
+      const response = await axios.post(process.env.REACT_APP_API_URL + 'course/download-zip-students-grades', {
         studentIds: filteredStudents, 
 
       }, {
@@ -133,7 +133,7 @@ const AdminManageStudents = () => {
       if (!confirmation) return;
   
       const response = await axios.post(
-        "http://localhost:5000/course/remove-student-from-course",
+        process.env.REACT_APP_API_URL + 'course/remove-student-from-course',
         {
           studentId,
           courseId: isAllCourses
@@ -199,7 +199,7 @@ const AdminManageStudents = () => {
       const studentIds = studentsToRemove.map((student) => student._id);
   
       const response = await axios.post(
-        "http://localhost:5000/course/remove-students-from-course",
+        process.env.REACT_APP_API_URL + 'course/remove-students-from-course',
         {
           studentIds,
           courseId: isAllCourses
@@ -250,7 +250,7 @@ const AdminManageStudents = () => {
         return;
       }
       const response = await axios.post(
-        "http://localhost:5000/user//update-only-institution-code",
+        process.env.REACT_APP_API_URL + 'user/update-only-institution-code',
         {
           _id: studentId,
           code: "NO-INSTITUTION", 
@@ -293,7 +293,7 @@ const AdminManageStudents = () => {
   
       // Loop through and remove each student
       for (const student of studentsToRemove) {
-        await axios.post("http://localhost:5000/user//update-only-institution-code", {
+        await axios.post(process.env.REACT_APP_API_URL + 'user/update-only-institution-code', {
           _id: student._id,
           code: "NO-INSTITUTION", // Mark as removed from institution
         });
@@ -353,7 +353,7 @@ const AdminManageStudents = () => {
   
       // Send batch update request to the backend
       const response = await axios.post(
-        "http://localhost:5000/course/update-multiple-enrollments",
+        process.env.REACT_APP_API_URL + 'course/update-multiple-enrollments',
         { updates }
       );
   
@@ -396,7 +396,7 @@ const AdminManageStudents = () => {
   
     try {
       const response = await axios.post(
-        `http://localhost:5000/course/update-enrollment/${enrollmentId}`,
+        process.env.REACT_APP_API_URL + `course/update-enrollment/${enrollmentId}`,
         { visible: !currentVisibility }
       );
   
@@ -528,7 +528,7 @@ const AdminManageStudents = () => {
       // Iterate over each student
       for (const student of targetStudents) {
         const response = await axios.get(
-          `http://localhost:5000/course/get-all-grades/${student._id}`
+          process.env.REACT_APP_API_URL + `course/get-all-grades/${student._id}`
         );
         const gradesData = response.data.data;
   
@@ -840,7 +840,7 @@ const StudentCard = ({ student, selectedCourse, toggleVisibility, isChecked,hand
   const downloadGrades = async (studentId, studentName) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/course/get-all-grades/${studentId}`
+        process.env.REACT_APP_API_URL + `course/get-all-grades/${studentId}`
       );
 
       const gradesData = response.data.data;

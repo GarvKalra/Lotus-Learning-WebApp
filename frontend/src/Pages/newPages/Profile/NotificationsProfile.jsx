@@ -18,7 +18,7 @@ const NotificationsProfile = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const BASE_WS_URL = 'ws://localhost:5000';
+  const BASE_WS_URL = process.env.REACT_APP_WEBSOCKET_URL;
 
   useEffect(() => {
     const fetchNotifications = async () => {

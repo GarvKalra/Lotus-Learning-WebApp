@@ -40,7 +40,7 @@ const AdminSendNotification = () => {
     if (!hasFetchedRecipients.current && studentIds.length) {
       const fetchRecipients = async () => {
         try {
-          const response = await axios.post("http://localhost:5000/admin/get-students-by-ids", {
+          const response = await axios.post(process.env.REACT_APP_API_URL + 'admin/get-students-by-ids', {
             studentIds,
           });
           setRecipients(response.data.students);
@@ -80,7 +80,7 @@ const AdminSendNotification = () => {
     if (response) {
       alert(`Notification sent successfully to ${isBulkNotification ? "selected students" : "the student"}!`);
 
-      await axios.post("http://localhost:5000/admin/send-email-notification", {
+      await axios.post(process.env.REACT_APP_API_URL + 'admin/send-email-notification', {
         title,
         message,
         recipients: recipients.map(recipient => recipient.email),

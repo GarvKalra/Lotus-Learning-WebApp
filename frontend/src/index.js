@@ -6,13 +6,14 @@ import App from './App';
 import { ApolloProvider, ApolloClient, InMemoryCache } from '@apollo/client';
 
 //redux 
+
 import { Provider } from 'react-redux'
 import { store } from './redux/store'
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 
 // const client = new ApolloClient({
-//   uri: ' http://localhost:5000/graphql', // Your backend GraphQL endpoint
+//   uri: ' process.env.REACT_APP_API_URLgraphql', // Your backend GraphQL endpoint
 //   cache: new InMemoryCache(),
 // });
 

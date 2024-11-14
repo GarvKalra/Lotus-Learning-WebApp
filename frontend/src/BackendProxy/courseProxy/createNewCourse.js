@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = ' http://localhost:5000/course'
+const BASE_URL = process.env.API_URL + 'course';
 
 const createNewCourseProxy = async(newCourseObj) => {
       try {

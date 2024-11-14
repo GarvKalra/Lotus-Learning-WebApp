@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 
-const url = ' http://localhost:5000/cookies'
-
+const url = process.env.REACT_APP_API_URL + 'cookies'
+console.log(url);
 
 export const getLogedInCookies = async () => {
   try {

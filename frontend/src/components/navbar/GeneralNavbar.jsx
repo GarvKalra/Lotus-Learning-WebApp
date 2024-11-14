@@ -32,7 +32,7 @@ const GeneralNavbar = ({ fixed = true }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const BASE_WS_URL = 'ws://localhost:5000';
+  const BASE_WS_URL = process.env.REACT_APP_WEBSOCKET_URL;
 
   const unreadCount = notifications.filter(notification => notification.status === "unread").length;
 
