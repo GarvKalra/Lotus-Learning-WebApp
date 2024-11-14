@@ -16,8 +16,8 @@ const upload = multer({ storage });
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
-    const { institutionCode } = req.body;
-
+    const { institutionCode } = req.query;
+    console.log(institutionCode);
     if (!file) {
       return res.status(400).json({ message: "No file uploaded." });
     }
@@ -39,12 +39,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return await Student.updateOne(
         { email },
         {
-          $setOnInsert: { institutionCode, email, sentOn: new Date(), status: "Pending" },
+          $set: { institutionCode, sentOn: new Date(), status: "Pending" }, 
+          $setOnInsert: { email } 
         },
-        { upsert: true } //insert if not found, do nothing if found
+        { upsert: true }
       );
     });
-
 
     await Promise.all(studentPromises);
 

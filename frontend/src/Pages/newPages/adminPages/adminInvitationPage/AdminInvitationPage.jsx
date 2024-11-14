@@ -50,10 +50,12 @@ const AdminInvitationPage = () => {
   };
 
   const handleFileChange = (e) => {
+ 
     const selectedFile = e.target.files[0];
     if (selectedFile && (selectedFile.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
       selectedFile.type === "application/vnd.ms-excel")) {
       setFile(selectedFile);
+      console.log("uploaded");
     } else {
       alert("Please upload a valid Excel file (.xlsx or .xls)");
       e.target.value = null;
@@ -61,6 +63,7 @@ const AdminInvitationPage = () => {
   };
 
   const handleUpload = async () => {
+  
     if (!file) {
       alert("Please select a file first");
       return;
@@ -68,10 +71,12 @@ const AdminInvitationPage = () => {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('institutionCode', institutionCode);
-
+  
+    
+    console.log("uploaded");
     try {
-      const response = await axios.post('http://localhost:5001/api/students/upload', formData, {
+    
+      const response = await axios.post(`http://localhost:5001/api/students/upload?institutionCode=${institutionCode}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
