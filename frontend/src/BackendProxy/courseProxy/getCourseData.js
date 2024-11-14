@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const BASE_URL = " http://localhost:5001/course";
+const BASE_URL = process.env.REACT_APP_API_URL + 'course';
 
 const getCourseData = async (id) => {
+
   try {
     const response = await axios.get(`${BASE_URL}/get-course-data`, {
       params: {

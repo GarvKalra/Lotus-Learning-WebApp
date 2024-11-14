@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = "http://localhost:5001/course";
+const BASE_URL = process.env.REACT_APP_API_URL + 'course';
 
 // Function to fetch enrollment data for a specific user and course
 const getEnrollmentData = async (userId, courseId) => {

@@ -1,13 +1,12 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { AiFillFileImage } from "react-icons/ai";
-import createNewCourseProxy from "../../../../BackendProxy/courseProxy/createNewCourse";
+import updateCourseDataProxy from "../../../../BackendProxy/courseProxy/updateCourseData"; // Adjust import path if needed
 import { useSelector } from "react-redux";
 
 const CreateEditHome = ({ courseData, setCourseData }) => {
-
-  // const { sharedVariable, setSharedVariable } = useContext(MyContext);
   const authUser = useSelector((state) => state.user);
   const [courseTitle, setCourseTitle] = useState("");
   const [courseDesc, setCourseDesc] = useState("");
@@ -15,39 +14,31 @@ const CreateEditHome = ({ courseData, setCourseData }) => {
   const [categories, setCategories] = useState([]);
   const [complexity, setComplexity] = useState("");
 
-  // Handle image change and resize
-  const handleImageChange = (event) => {
+  // Handle image upload and preview
+  const handleImageChange = async (event) => {
     const file = event.target.files[0];
+    if (file && file.type.startsWith("image/")) {
+      setCourseImage(URL.createObjectURL(file)); // Set local preview for the image
 
-    if (file) {
-      const reader = new FileReader();
+      // Upload the image to the backend
+      const formData = new FormData();
+      formData.append("image", file);
 
-      reader.onload = (e) => {
-        const img = new Image();
-        img.src = e.target.result;
-
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-
-          // Set the desired size
-          const targetWidth = 750;
-          const targetHeight = 422;
-
-          // Resize the image on the canvas
-          canvas.width = targetWidth;
-          canvas.height = targetHeight;
-          ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-
-          // Get the URL of the resized image
-          const resizedImageURL = canvas.toDataURL("image/jpeg");
-
-          // Update the state with the new resized image
-          setCourseImage(resizedImageURL);
-        };
-      };
-
-      reader.readAsDataURL(file);
+      try {
+        const response = await updateCourseDataProxy(formData);
+        if (response.data.success && response.data.imageUrl) {
+          // Update courseData with the new image URL
+          const newCourseData = { ...courseData, imageUrl: response.data.imageUrl };
+          setCourseData(newCourseData);
+          console.log("Course updated successfully with new image URL");
+        } else {
+          console.error("Failed to update course image URL");
+        }
+      } catch (error) {
+        console.error("Error updating course:", error);
+      }
+    } else {
+      console.error("Invalid file type");
     }
   };
 

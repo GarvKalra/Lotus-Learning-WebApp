@@ -1,7 +1,7 @@
 import axios from 'axios';
 import compressJson from '../CompressJson.js';
 
-const BASE_URL = ' http://localhost:5001/course'
+const BASE_URL = process.env.REACT_APP_API_URL + 'course';
 
 const updateCourseDataProxy = async(course) => {
     try {
