@@ -3,6 +3,7 @@ const cookieParser = require('cookie-parser');
 const { graphqlHTTP } = require('express-graphql');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const config = require('./utils/config');
 const WebSocket = require('ws'); 
