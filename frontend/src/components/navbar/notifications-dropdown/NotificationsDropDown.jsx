@@ -6,7 +6,8 @@ import markNotificationAsRead from '../../../BackendProxy/notificationProxy/mark
 const NotificationsDropDown = ({ notifications }) => {
   const navigate = useNavigate();
 
-  const handleNavigateToMessage = (notification) => {
+  const handleNavigateToMessage = async (notification) => {
+    await markNotificationAsRead(notification._id);
     navigate('/messages', {
    
       state: {

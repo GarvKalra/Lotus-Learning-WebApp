@@ -264,7 +264,7 @@ const NotificationBar = ({ id, message, description, date, status, isSelected, o
   const navigate = useNavigate();
 
   const handleNavigateToMessage = async () => {
- 
+    await markNotificationAsRead(notification._id);
     navigate('/messages', {
       state: {
         notificationData: {
