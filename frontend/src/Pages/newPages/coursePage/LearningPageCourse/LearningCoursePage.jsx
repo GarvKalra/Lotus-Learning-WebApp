@@ -54,6 +54,8 @@ const LearningCoursePage = ({ userId }) => {
         ...enrollment,
         course: { ...course, lessons: updatedLessons },
       });
+    
+      setCourseName(course.title);
 
       // Set first lesson
       if (updatedLessons.length > 0) {
