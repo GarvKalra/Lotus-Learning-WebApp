@@ -1,12 +1,14 @@
 import React from 'react';
 import './NotificationDropDown.css';
 import { useNavigate } from 'react-router-dom';
+import markNotificationAsRead from '../../../BackendProxy/notificationProxy/markNotificationAsRead';
 
 const NotificationsDropDown = ({ notifications }) => {
   const navigate = useNavigate();
 
   const handleNavigateToMessage = (notification) => {
     navigate('/messages', {
+   
       state: {
         notificationData: {
           notificationId: notification._id,
