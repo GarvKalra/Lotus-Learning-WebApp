@@ -62,11 +62,11 @@ router.get('/:institutionCode', async (req, res) => {
   try {
     const institutionCode = req.params.institutionCode;
     console.debug(institutionCode);
-    const students = await Students.find({institutionCode});
-    res.json(students);
+    const students = await Students.find({institutionCode:institutionCode});
+    return res.json(students);
   } catch (error) {
     console.error('Error fetching students:', error);
-    res.status(500).json({ message: "Error fetching students" });
+    return res.status(500).json({ message: "Error fetching students" });
   }
 });
 
