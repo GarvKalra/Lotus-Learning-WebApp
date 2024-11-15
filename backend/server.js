@@ -15,11 +15,18 @@ const isAuth = require('./middleware/is-auth');
 const { connectToDatabases } = require('./db/connection');
 // const processNotifications = require('./notification-microservice/worker-service');
 
-
+const buildPath = '/var/www/Lotus-Learning-WebApp/frontend/build';
 
 const app = express();
+app.use(express.static(buildPath));
 const server = http.createServer(app); // Create an HTTP server
 
+
+// Force JavaScript content type
+app.use('/static/js', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  next();
+});
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
@@ -123,6 +130,9 @@ app.use("/highlight", (req, res) => {
 setupWebSocketServer(server);
 
 
+app.get('*', (req, res) => {
+  res.sendFile(path.join('/var/www/Lotus-Learning-WebApp/frontend/build', 'index.html'));
+});
 
 connectToDatabases()
   .then(() => {
