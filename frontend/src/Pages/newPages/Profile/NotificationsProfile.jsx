@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MdOpenInNew, MdOutlineClose, MdDelete, MdBook } from "react-icons/md";
 import OnHoverExtraHud from '../../../components/OnHoverExtraHud';
 import getNotificationsByUserId from '../../../BackendProxy/notificationProxy/getNotificationsByUserId';
@@ -19,6 +19,8 @@ const NotificationsProfile = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const BASE_WS_URL = process.env.REACT_APP_WEBSOCKET_URL;
+  const wsRef = useRef(null);
+  const reconnectAttempts = useRef(0);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -43,52 +45,73 @@ const NotificationsProfile = () => {
 
   useEffect(() => {
     if (authUser && authUser._id) {
-      const ws = new WebSocket(BASE_WS_URL);
-  
-      ws.onopen = () => {
-        console.log("Connected to WebSocket");
+      const connectWebSocket = () => {
+        wsRef.current = new WebSocket(BASE_WS_URL);
+
+        wsRef.current.onopen = () => {
+          console.log("Connected to WebSocket");
+          reconnectAttempts.current = 0; // Reset reconnect attempts
+        };
+
+        wsRef.current.onmessage = (event) => {
+          console.log("Received WebSocket message:", event.data);
+          const data = JSON.parse(event.data);
+
+          if (data.action === 'new' && data.notification.userId === authUser._id) {
+            setNotifications((prevNotifications) => {
+              const updatedNotifications = [data.notification, ...prevNotifications];
+              updateUnreadCount(updatedNotifications);
+              return updatedNotifications;
+            });
+          } else if (data.action === 'delete') {
+            setNotifications((prevNotifications) => {
+              const updatedNotifications = prevNotifications.filter(notification => !data.notificationIds.includes(notification._id));
+              updateUnreadCount(updatedNotifications);
+              return updatedNotifications;
+            });
+          } else if (data.action === 'update') {
+            setNotifications((prevNotifications) => {
+              const updatedNotifications = prevNotifications.map(notification =>
+                data.notificationIds.includes(notification._id)
+                  ? { ...notification, status: 'read' }
+                  : notification
+              );
+              updateUnreadCount(updatedNotifications);
+              return updatedNotifications;
+            });
+          }
+        };
+
+        wsRef.current.onclose = (event) => {
+          console.log("WebSocket connection closed", event);
+          if (!event.wasClean) {
+            attemptReconnect();
+          }
+        };
+
+        wsRef.current.onerror = (error) => {
+          console.error("WebSocket error:", error);
+          wsRef.current.close();
+        };
       };
-  
-      ws.onmessage = (event) => {
-        console.log("Received WebSocket message:", event.data);
-        const data = JSON.parse(event.data);
-  
-        if (data.action === 'new' && data.notification.userId === authUser._id) {
-          setNotifications((prevNotifications) => {
-            // Prepend the new notification at the top
-            const updatedNotifications = [data.notification, ...prevNotifications];
-            updateUnreadCount(updatedNotifications);
-            return updatedNotifications;
-          });
-        } else if (data.action === 'delete') {
-          setNotifications((prevNotifications) => {
-            const updatedNotifications = prevNotifications.filter(notification => !data.notificationIds.includes(notification._id));
-            updateUnreadCount(updatedNotifications);
-            return updatedNotifications;
-          });
-        } else if (data.action === 'update') {
-          setNotifications((prevNotifications) => {
-            const updatedNotifications = prevNotifications.map(notification =>
-              data.notificationIds.includes(notification._id)
-                ? { ...notification, status: 'read' }
-                : notification
-            );
-            updateUnreadCount(updatedNotifications);
-            return updatedNotifications;
-          });
+
+      const attemptReconnect = () => {
+        if (reconnectAttempts.current < 5) {
+          reconnectAttempts.current += 1;
+          const timeout = Math.min(1000 * 2 ** reconnectAttempts.current, 30000); // max 30s
+          console.log(`Reconnecting in ${timeout / 1000}s...`);
+          setTimeout(() => connectWebSocket(), timeout);
+        } else {
+          console.error("Max reconnect attempts reached. WebSocket will not reconnect.");
         }
       };
-  
-      ws.onclose = () => {
-        console.log("WebSocket connection closed");
-      };
-  
-      ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
-      };
-  
+
+      connectWebSocket();
+
       return () => {
-        ws.close();
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
       };
     }
   }, [authUser]);

@@ -25,6 +25,9 @@ const GeneralNavbar = ({ fixed = true }) => {
   const [results, setResults] = useState([]);
   const hasFetched = useRef(false);
 
+  const wsRef = useRef(null);
+  const reconnectAttempts = useRef(0);
+
   const searchRef = useRef(null); 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -119,48 +122,70 @@ const GeneralNavbar = ({ fixed = true }) => {
     }
   }, [query, isLogedIn]); 
 
-useEffect(() => {
-  if (isLogedIn) {
-    const ws = new WebSocket(BASE_WS_URL);
+  useEffect(() => {
+    if (isLogedIn) {
+      const connectWebSocket = () => {
+        wsRef.current = new WebSocket(BASE_WS_URL);
 
-    ws.onopen = () => {
-      console.log("Connected to WebSocket");
-    };
+        wsRef.current.onopen = () => {
+          console.log("Connected to WebSocket");
+          reconnectAttempts.current = 0; // Reset reconnect attempts
+        };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+        wsRef.current.onmessage = (event) => {
+          const data = JSON.parse(event.data);
 
-      if (data.action === 'new' && data.notification.userId === authUser._id) {
-        // Prepend new notifications from WebSocket
-        setNotifications(prevNotifications => [data.notification, ...prevNotifications]);
-      } else if (data.action === 'delete') {
-        setNotifications(prevNotifications =>
-          prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
-        );
-      } else if (data.action === 'update') {
-        setNotifications(prevNotifications =>
-          prevNotifications.map(notification =>
-            data.notificationIds.includes(notification._id)
-              ? { ...notification, status: 'read' }
-              : notification
-          )
-        );
-      }
-    };
+          if (data.action === 'new' && data.notification.userId === authUser._id) {
+            // Prepend new notifications from WebSocket
+            setNotifications(prevNotifications => [data.notification, ...prevNotifications]);
+          } else if (data.action === 'delete') {
+            setNotifications(prevNotifications =>
+              prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
+            );
+          } else if (data.action === 'update') {
+            setNotifications(prevNotifications =>
+              prevNotifications.map(notification =>
+                data.notificationIds.includes(notification._id)
+                  ? { ...notification, status: 'read' }
+                  : notification
+              )
+            );
+          }
+        };
 
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
+        wsRef.current.onclose = (event) => {
+          console.log("WebSocket connection closed", event);
+          if (!event.wasClean) {
+            attemptReconnect();
+          }
+        };
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
+        wsRef.current.onerror = (error) => {
+          console.error("WebSocket error:", error);
+          wsRef.current.close();
+        };
+      };
 
-    return () => {
-      ws.close();
-    };
-  }
-}, [isLogedIn]);
+      const attemptReconnect = () => {
+        if (reconnectAttempts.current < 5) {
+          reconnectAttempts.current += 1;
+          const timeout = Math.min(1000 * 2 ** reconnectAttempts.current, 30000); // Exponential backoff, max 30s
+          console.log(`Reconnecting in ${timeout / 1000}s...`);
+          setTimeout(() => connectWebSocket(), timeout);
+        } else {
+          console.error("Max reconnect attempts reached. WebSocket will not reconnect.");
+        }
+      };
+
+      connectWebSocket();
+
+      return () => {
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+      };
+    }
+  }, [isLogedIn]); 
 
   return (
     <div
