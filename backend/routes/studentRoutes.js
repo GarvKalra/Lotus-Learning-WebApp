@@ -116,6 +116,24 @@ router.post('/update-status', async (req, res) => {
   }
 });
 
+//get all students reagrdless of inst code
+router.get('/all-students', async (req, res) => {
+  try {
+    const students = await Students.find({});
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      data: students
+    });
+  } catch (error) {
+    console.error('Error fetching all students:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching all students",
+      error: error.message
+    });
+  }
+});
 
 router.get('/test', (req, res) => {
   res.json({ message: 'Students route working' });
