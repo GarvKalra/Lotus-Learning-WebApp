@@ -82,7 +82,7 @@ router.post('/update-status', async (req, res) => {
       { email: email },  // find by email
       {
         $set: {
-          status: "accepted"
+          status: "Accepted"
         }
       },
       {

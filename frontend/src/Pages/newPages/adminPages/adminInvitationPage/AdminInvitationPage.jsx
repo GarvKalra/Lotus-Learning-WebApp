@@ -248,7 +248,7 @@ const AdminInvitationPage = () => {
                   <td className="py-2">{new Date(student.sentOn).toLocaleString()}</td>
                   <td className="py-2">
                     <div className="flex justify-end">
-                      <div className={`px-2 py-1 text-sm flex items-center justify-center ${student.status === "accepted" ? "bg-green-500" : "bg-yellow-500"} rounded-full`}>
+                      <div className={`px-2 py-1 text-sm flex items-center justify-center ${student.status === "Accepted" ? "bg-green-500" : "bg-yellow-500"} rounded-full`}>
                         <p className={`font-medium ${student.status === "Accepted" ? "text-green-100" : "text-yellow-100"}`}>
                           {student.status}
                         </p>
