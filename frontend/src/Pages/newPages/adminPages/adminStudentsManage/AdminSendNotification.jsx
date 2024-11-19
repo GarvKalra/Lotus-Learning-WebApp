@@ -60,6 +60,7 @@ const AdminSendNotification = () => {
     alert("Please fill in both title and message.");
     return;
   }
+ 
 
   const notificationData = studentIds.map(studentId => ({
     userId: studentId,
@@ -117,32 +118,48 @@ const AdminSendNotification = () => {
     </div>
 
     <div className="mb-4">
-      <label className="block text-gray-700">Title</label>
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Enter notification title"
-        className="px-3 py-2 border rounded-md text-base w-full"
-      />
+  <label className="block text-gray-700">Title</label>
+  <input
+    type="text"
+    value={title}
+    onChange={(e) => {
+      if (e.target.value.length <= 50) {
+        setTitle(e.target.value);
+      }
+    }}
+    placeholder="Enter notification title (max 50 characters)"
+    className="px-3 py-2 border rounded-md text-base w-full"
+  />
+</div>
+
+<div className="mb-4">
+  <label className="block text-gray-700">Message</label>
+  <textarea
+    value={message}
+    onChange={(e) => {
+      if (e.target.value.length <= 250) {
+        setMessage(e.target.value);
+      }
+    }}
+    placeholder="Enter notification message (max 250 characters)"
+    className="px-3 py-2 border rounded-md text-base w-full h-32"
+  ></textarea>
     </div>
 
-    <div className="mb-4">
-      <label className="block text-gray-700">Message</label>
-      <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Enter notification message"
-        className="px-3 py-2 border rounded-md text-base w-full h-32"
-      ></textarea>
-    </div>
-
-    <button
-      onClick={handleSend}
-      className="text-white font-medium px-3 py-1 ml-3 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
-    >
-      Send Notification{isBulkNotification && "s"}
-    </button>
+    <div className="flex space-x-4">
+        <button
+          onClick={handleSend}
+          className="text-white font-medium px-3 py-1 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
+        >
+          Send Notification{isBulkNotification && "s"}
+        </button>
+        <button
+          onClick={() => navigate(-1)} // Navigate back to the previous page
+          className="text-white font-medium px-3 py-1 rounded-full linearGradient_ver1 text-sm hover:scale-[1.05] transition-all"
+        >
+          Back
+        </button>
+      </div>
   </div>
 </div>
   );

@@ -38,26 +38,36 @@ const ProfileDropDown = () => {
      
         <div className="w-[300px] border rounded-sm bg-white">
        
-          <div
-            onClick={isStudent ? () => navigate('/profile/courses') : undefined}
-            className="p-2 border-b flex items-center space-x-2 cursor-pointer hover:bg-stone-50"
-          >
-            <div className="h-[35px] w-[35px] bg-stone-800 rounded-full flex items-center justify-center cursor-pointer no-select overflow-hidden">
-              {authUser.profilePic ? (
-                <img
-                  src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?cs=srgb&dl=pexels-mohamed-abdelghaffar-771742.jpg&fm=jpg"
-                  alt="profile pic"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <p className="text-sm font-bold text-white">
-                  {noPfpGenerator(authUser.username)}
-                </p>
-              )}
-            </div>
+        <div
+  onClick={isStudent ? () => navigate('/profile/courses') : undefined}
+  className="p-2 border-b flex items-center space-x-2 cursor-pointer hover:bg-stone-50"
+>
+  
+  <div
+    className="h-[35px] w-[35px] bg-stone-800 rounded-full flex items-center justify-center cursor-pointer no-select overflow-hidden"
+    style={{ flexShrink: 0 }} // Prevent shrinking
+  >
+    {authUser.profilePic ? (
+      <img
+        src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?cs=srgb&dl=pexels-mohamed-abdelghaffar-771742.jpg&fm=jpg"
+        alt="profile pic"
+        className="h-full w-full object-cover"
+      />
+    ) : (
+      <p className="text-sm font-bold text-white">
+        {noPfpGenerator(authUser.username)}
+      </p>
+    )}
+  </div>
             <div>
               <p className="text-sm text-stone-800">{authUser.name}</p>
-              <p className="text-xs text-stone-500">{authUser.email}</p>
+              <p className="text-xs text-stone-500"
+                 style={{
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere",
+                  whiteSpace: "normal",
+                }}
+                >{authUser.email}</p>
             </div>
           </div>
           <div className="">

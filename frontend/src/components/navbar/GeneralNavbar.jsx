@@ -207,37 +207,39 @@ const GeneralNavbar = ({ fixed = true }) => {
           className="h-full p-[.8rem] cursor-pointer md:hidden block"
         />
 
-        <div className="relative w-[440px]" ref={searchRef}>
-          <div
-            className={`${styles.simple_text_input} rounded-full flex justify-between items-center`}
-          >
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
-              className="focus:outline-none px-1 w-full"
-            />
-            <MdOutlineSearch className="text-xl cursor-pointer" />
-          </div>
-
-          {isLogedIn && results.length > 0 && (
-            <div className="absolute top-full mt-1 bg-white shadow-lg rounded-md p-2 w-full z-40">
-              <h2 className="text-xl font-semibold">Search Results</h2>
-              <ul className="list-disc list-inside">
-                {results.map((course) => (
-                  <li
-                    key={course._id}
-                    className="cursor-pointer text-blue-600 hover:underline"
-                    onClick={() => navigate('/course/learn?id='+course._id)}
-                  >
-                    {course.title}
-                  </li>
-                ))}
-              </ul>
+{isLogedIn && (
+          <div className="relative w-[440px]" ref={searchRef}>
+            <div
+              className={`${styles.simple_text_input} rounded-full flex justify-between items-center`}
+            >
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search"
+                className="focus:outline-none px-1 w-full"
+              />
+              <MdOutlineSearch className="text-xl cursor-pointer" />
             </div>
-          )}
-        </div>
+
+            {results.length > 0 && (
+              <div className="absolute top-full mt-1 bg-white shadow-lg rounded-md p-2 w-full z-40">
+                <h2 className="text-xl font-semibold">Search Results</h2>
+                <ul className="list-disc list-inside">
+                  {results.map((course) => (
+                    <li
+                      key={course._id}
+                      className="cursor-pointer text-blue-600 hover:underline"
+                      onClick={() => navigate(`/course/learn?id=${course._id}`)}
+                    >
+                      {course.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         {isLogedIn ? (
           <div className="flex items-center space-x-3 mx-2">
