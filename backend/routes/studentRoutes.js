@@ -116,6 +116,30 @@ router.post('/update-status', async (req, res) => {
   }
 });
 
+router.get('/get-emails', async (req, res) => {
+  try {
+    const students = await Student.find({}, 'email'); // Fetch only the 'email' field
+    const emails = students.map(student => student.email); // Extract emails into an array
+    res.status(200).json({ success: true, emails });
+  } catch (error) {
+    console.error('Error fetching student emails:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.get('verify-email/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    const student = await Student.findOne({ email });
+    if (student) {
+      return res.status(200).json({ exists: true });
+    }
+    return res.status(404).json({ exists: false });
+  } catch (error) {
+    console.error('Error checking email existence:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
 
 router.get('/test', (req, res) => {
   res.json({ message: 'Students route working' });
