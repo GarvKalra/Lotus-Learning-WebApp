@@ -36,14 +36,14 @@ const SignUp = ({ type = 'student' }) => {
   const [passwordVisibility, setPasswordVisibility] = useState(false);
   const [confirmPasswordVisibility, setConfirmPasswordVisibility] = useState(false);
 
-  const [studentEmails, setStudentEmails] = useState([]);
+
 
   const navigateTo = () => {
     navigate('/registration');
   };
 
   const [emailExists, setEmailExists] = useState(null); // To track if email exists
-  const [emailError, setEmailError] = useState(''); // Error message for email validation
+  const [emailError, setEmailError] = useState('');
 
   // Function to check email existence
   const checkEmailExists = async (email) => {
@@ -52,22 +52,21 @@ const SignUp = ({ type = 'student' }) => {
       setEmailError('');
       return;
     }
-
+  
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/verify-email/${email}`
-      );
-      if (response.data.exists) {
-        setEmailExists(true);
-        setEmailError('');
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}api/students/verify-email/${email}`);
+      console.log(data);
+      setEmailExists(data.exists);
+      
+      if (data.exists) {
+        setEmailError('This email is already registered.');
       } else {
-        setEmailExists(false);
-        setEmailError('Use your official email ID.');
+        setEmailError('');
       }
     } catch (error) {
       console.error('Error checking email existence:', error);
-      setEmailExists(false);
-      setEmailError('Error verifying email.');
+      setEmailExists(null);
+      setEmailError('Unable to verify email. Please try again later.');
     }
   };
 
@@ -180,49 +179,56 @@ const SignUp = ({ type = 'student' }) => {
     }
   });
 
-  const validateFormData = () => {
+  const validateFormData = async () => {
     setMissingData(false);
     setInvalidEmail(false);
     setSamePassword(false);
+    setEmailError('');
 
     if (!email || !username || !password || !confirmPassword) {
       setMissingData(true);
       return false;
     }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setInvalidEmail(true);
+      setEmailError('Please enter a valid email address.');
       return false;
     }
-    if (!studentEmails.includes(email)) {
-      setInvalidEmail(true);
+
+    try {
+      // Wait for email check to complete
+      await checkEmailExists(email);
+
+      // After email check, check the result
+      if (emailExists) {
+        setInvalidEmail(true);
+        setEmailError('This email is already registered.');
+        return false;
+      }
+    } catch (error) {
+      setEmailError('Unable to verify email. Please try again later.');
       return false;
     }
+
     if (password.length < 8) {
       return false;
     }
+
     if (password !== confirmPassword) {
       setSamePassword(true);
       return false;
     }
+
     return true;
   };
 
   useEffect(() => {
-    const fetchStudentEmails = async () => {
-      try {
-        const response = await axios.get(process.env.REACT_APP_API_URL + 'api/students/get-emails');
-        if (response.data.success) {
-          setStudentEmails(response.data.emails);
-        }
-      } catch (error) {
-        console.error('Error fetching student emails:', error);
-      }
-    };
-
-    fetchStudentEmails();
-  }, []);
-
-
+    if (!emailExists) {
+      setHaveInvitationCode(false);
+      setInvitationCode('');
+    }
+  }, [emailExists]);
 
   useEffect(() => {
     setSamePassword(false); // Reset samePassword state when password or confirmPassword changes
