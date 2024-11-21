@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import deleteUserOnCookies from "../../../BackendProxy/cookiesProxy/deleteUserCookies";
+import { clearUser } from "../../../redux/slice/user/userSlice";
 
 const ProfileDropDown = () => {
   const navigate = useNavigate();
@@ -9,10 +10,16 @@ const ProfileDropDown = () => {
   const authUser = useSelector((state) => state.user);
 
   const logout = async () => {
-    // Clear user data on logout and navigate to registration page
-    deleteUserOnCookies();
-    navigate('/registration');
-    //window.location.reload();
+    try {
+      // Clear user data on logout
+      await deleteUserOnCookies();
+
+      dispatch(clearUser()); 
+      navigate('/registration');
+      window.location.reload();
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
 
   const noPfpGenerator = (name) => {
