@@ -51,7 +51,7 @@ const AdminInvitationPage = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/students/${institutionCode}`);
+      const response = await axios.get(process.env.REACT_APP_API_URL + `api/students/${institutionCode}`);
       const fetchedStudents = response.data;
   console.log(fetchedStudents);
       setStudents(fetchedStudents); // Update the students state
@@ -88,7 +88,7 @@ const AdminInvitationPage = () => {
   
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/students/upload?institutionCode=${institutionCode}`,
+        process.env.REACT_APP_API_URL + `api/students/upload?institutionCode=${institutionCode}`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
