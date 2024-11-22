@@ -1,6 +1,9 @@
 import axios from "axios";
+import { setUser } from "../../redux/slice/user/userSlice";
+import { getLogedInCookies } from "../../cookie-handler/cookieHandler";
 
-const BASE_URL = " http://localhost:5000/cookies";
+
+const BASE_URL = process.env.REACT_APP_API_URL+ 'cookies';
 
 const deleteUserOnCookies = async () => {
   try {
@@ -11,6 +14,9 @@ const deleteUserOnCookies = async () => {
         },
       });
       console.log(response)
+    
+  
+   
     //   if (saveOnCookies.status === 200) {
     //     return saveOnCookies.data.data.user
     //   }

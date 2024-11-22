@@ -1,20 +1,20 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { AiFillFileImage } from "react-icons/ai";
-import createNewCourseProxy from "../../../../BackendProxy/courseProxy/createNewCourse";
+import updateCourseDataProxy from "../../../../BackendProxy/courseProxy/updateCourseData"; // Adjust import path if needed
 import { useSelector } from "react-redux";
 import axios from "axios";
 
 const CreateEditHome = ({ courseData, setCourseData }) => {
-
-  // const { sharedVariable, setSharedVariable } = useContext(MyContext);
   const authUser = useSelector((state) => state.user);
   const [courseTitle, setCourseTitle] = useState("");
   const [courseDesc, setCourseDesc] = useState("");
   const [courseImage, setCourseImage] = useState(null);
   const [categories, setCategories] = useState([]);
   const [complexity, setComplexity] = useState("");
+
  
   
   const resizeImage = (file, width, height) => {

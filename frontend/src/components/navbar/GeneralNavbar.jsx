@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import logo from "../../Images/LotusLogoColour.webp";
 import logoText from "../../Images/lotusletters.webp";
 import styles from "../../Styles";
+import Badge from "@mui/material/Badge"; 
 import { MdOutlineSearch } from "react-icons/md";
 import { CiHeart } from "react-icons/ci";
 import { CiBellOn } from "react-icons/ci";
@@ -11,6 +12,8 @@ import ProfileDropDown from "./profile-dropdown/ProfileDropDown";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import getCoursesByProp from "../../BackendProxy/courseProxy/getCoursesByProp";
+import getNotificationsByUserId from "../../BackendProxy/notificationProxy/getNotificationsByUserId";
+import markNotificationAsRead from "../../BackendProxy/notificationProxy/markNotificationAsRead";
 
 const GeneralNavbar = ({ fixed = true }) => {
   const [notificationsDropDown, setNotificationsDropDown] = useState(false);
@@ -20,11 +23,21 @@ const GeneralNavbar = ({ fixed = true }) => {
   const [isLogedIn, setIsLogedIn] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const hasFetched = useRef(false);
+
+  const wsRef = useRef(null);
+  const reconnectAttempts = useRef(0);
 
   const searchRef = useRef(null); 
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const authUser = useSelector((state) => state.user);
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const BASE_WS_URL = process.env.REACT_APP_WEBSOCKET_URL;
+
+  const unreadCount = notifications.filter(notification => notification.status === "unread").length;
 
   const handleSearch = async () => {
     if (isLogedIn && query.trim() !== "" && authUser) { 
@@ -39,6 +52,8 @@ const GeneralNavbar = ({ fixed = true }) => {
       }
     }
   };
+
+  
 
   const handleClickOutside = (event) => {
     if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -55,6 +70,30 @@ const GeneralNavbar = ({ fixed = true }) => {
   }, [authUser]);
 
   useEffect(() => {
+    const fetchNotifications = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        if (authUser && authUser._id && notifications.length === 0 && !hasFetched.current) {
+          const userNotifications = await getNotificationsByUserId(authUser._id);
+          
+          setNotifications(userNotifications);
+          hasFetched.current = true; // Prevent repeat fetches
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+        setError("Failed to load notifications");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    if (!hasFetched.current && authUser && authUser._id) {
+      fetchNotifications();
+    }
+  }, [authUser, notifications.length]);
+
+  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 0 && !isFixed) {
         setIsFixed(true);
@@ -62,7 +101,6 @@ const GeneralNavbar = ({ fixed = true }) => {
         setIsFixed(false);
       }
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -84,6 +122,71 @@ const GeneralNavbar = ({ fixed = true }) => {
     }
   }, [query, isLogedIn]); 
 
+  useEffect(() => {
+    if (isLogedIn) {
+      const connectWebSocket = () => {
+        wsRef.current = new WebSocket(BASE_WS_URL);
+
+        wsRef.current.onopen = () => {
+          console.log("Connected to WebSocket");
+          reconnectAttempts.current = 0; // Reset reconnect attempts
+        };
+
+        wsRef.current.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+
+          if (data.action === 'new' && data.notification.userId === authUser._id) {
+            // Prepend new notifications from WebSocket
+            setNotifications(prevNotifications => [data.notification, ...prevNotifications]);
+          } else if (data.action === 'delete') {
+            setNotifications(prevNotifications =>
+              prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
+            );
+          } else if (data.action === 'update') {
+            setNotifications(prevNotifications =>
+              prevNotifications.map(notification =>
+                data.notificationIds.includes(notification._id)
+                  ? { ...notification, status: 'read' }
+                  : notification
+              )
+            );
+          }
+        };
+
+        wsRef.current.onclose = (event) => {
+          console.log("WebSocket connection closed", event);
+          if (!event.wasClean) {
+            attemptReconnect();
+          }
+        };
+
+        wsRef.current.onerror = (error) => {
+          console.error("WebSocket error:", error);
+          wsRef.current.close();
+        };
+      };
+
+      const attemptReconnect = () => {
+        if (reconnectAttempts.current < 5) {
+          reconnectAttempts.current += 1;
+          const timeout = Math.min(1000 * 2 ** reconnectAttempts.current, 30000); // Exponential backoff, max 30s
+          console.log(`Reconnecting in ${timeout / 1000}s...`);
+          setTimeout(() => connectWebSocket(), timeout);
+        } else {
+          console.error("Max reconnect attempts reached. WebSocket will not reconnect.");
+        }
+      };
+
+      connectWebSocket();
+
+      return () => {
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+      };
+    }
+  }, [isLogedIn]); 
+
   return (
     <div
       className={`w-full h-[4rem] box-shadow bg-white ${
@@ -104,37 +207,39 @@ const GeneralNavbar = ({ fixed = true }) => {
           className="h-full p-[.8rem] cursor-pointer md:hidden block"
         />
 
-        <div className="relative w-[440px]" ref={searchRef}>
-          <div
-            className={`${styles.simple_text_input} rounded-full flex justify-between items-center`}
-          >
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
-              className="focus:outline-none px-1 w-full"
-            />
-            <MdOutlineSearch className="text-xl cursor-pointer" />
-          </div>
-
-          {isLogedIn && results.length > 0 && (
-            <div className="absolute top-full mt-1 bg-white shadow-lg rounded-md p-2 w-full z-40">
-              <h2 className="text-xl font-semibold">Search Results</h2>
-              <ul className="list-disc list-inside">
-                {results.map((course) => (
-                  <li
-                    key={course._id}
-                    className="cursor-pointer text-blue-600 hover:underline"
-                    onClick={() => navigate('/course/learn?id='+course._id)}
-                  >
-                    {course.title}
-                  </li>
-                ))}
-              </ul>
+{isLogedIn && (
+          <div className="relative w-[440px]" ref={searchRef}>
+            <div
+              className={`${styles.simple_text_input} rounded-full flex justify-between items-center`}
+            >
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search"
+                className="focus:outline-none px-1 w-full"
+              />
+              <MdOutlineSearch className="text-xl cursor-pointer" />
             </div>
-          )}
-        </div>
+
+            {results.length > 0 && (
+              <div className="absolute top-full mt-1 bg-white shadow-lg rounded-md p-2 w-full z-40">
+                <h2 className="text-xl font-semibold">Search Results</h2>
+                <ul className="list-disc list-inside">
+                  {results.map((course) => (
+                    <li
+                      key={course._id}
+                      className="cursor-pointer text-blue-600 hover:underline"
+                      onClick={() => navigate(`/course/learn?id=${course._id}`)}
+                    >
+                      {course.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         {isLogedIn ? (
           <div className="flex items-center space-x-3 mx-2">
@@ -156,10 +261,18 @@ const GeneralNavbar = ({ fixed = true }) => {
               onMouseOut={() => setNotificationsDropDown(false)}
               className="relative md:block hidden"
             >
-              <CiBellOn className="text-2xl cursor-pointer" />
+         <Badge
+  badgeContent={unreadCount}
+  color="error"
+  overlap="circular"
+  className="cursor-pointer" 
+>
+  <CiBellOn className="text-2xl cursor-pointer" /> {}
+</Badge>
               {notificationsDropDown && (
                 <div className="absolute top-[100%] right-0 z-30">
-                  <NotificationsDropDown />
+                  <NotificationsDropDown notifications={notifications}
+                    />
                 </div>
               )}
             </div>

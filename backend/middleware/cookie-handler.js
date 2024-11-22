@@ -11,8 +11,8 @@ router.post(
       const userData = JSON.stringify(req.body);
       res.cookie('userDataAuth', userData, {
         httpOnly: true,
-        sameSite: 'none', // Adjust as needed based on your requirements
-        secure: true, // Remove for development; enable for production
+        sameSite: 'None',
+        secure: true, // Enable for production; set to false for development
       });
       res.status(200).json({ res: 'Success', data: req.body });
     } catch (err) {
@@ -43,7 +43,15 @@ router.post(
   '/delete-user-cookie',
   (req, res) => {
     try {
-      res.clearCookie('userDataAuth', { httpOnly: true, sameSite: 'None', secure: true });
+      res.set('Cache-Control', 'no-store'); 
+      res.clearCookie('userDataAuth', {
+        httpOnly: true,
+        sameSite: 'None',
+        secure: true, 
+      });
+      console.log('Set-Cookie header sent:', res.getHeaders()['set-cookie']);
+      console.log('Cookies after clearing:', req.cookies);
+     
       res.status(200).json({ res: 'Success', message: 'User cookie deleted successfully' });
     } catch (err) {
       console.log('Server-side error', err);

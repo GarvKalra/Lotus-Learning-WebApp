@@ -15,7 +15,7 @@ import { BsQuestionCircleFill } from "react-icons/bs";
 import saveUserOnCookies from "../../../BackendProxy/cookiesProxy/saveUserCookies";
 import OnHoverExtraHud from "../../../components/OnHoverExtraHud";
 import enrollStudentByInstitution from "../../../BackendProxy/courseProxy/enrollStudentByInstituition";
-const SignUp = ({type = 'student'}) => {
+const SignUp = ({ type = 'student' }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [invitationCode, setInvitationCode] = useState('')
@@ -35,21 +35,77 @@ const SignUp = ({type = 'student'}) => {
   const [usernameTaken, setUsernameTaken] = useState(false);
   const [passwordVisibility, setPasswordVisibility] = useState(false);
   const [confirmPasswordVisibility, setConfirmPasswordVisibility] = useState(false);
+  const [matchingInstitCode, setInstitCode] = useState('');
+  const [invitationCodeMismatch, setInvitationCodeMismatch] = useState(false); 
+  const [pendingStatus, setStatus] = useState(false);
+
+
+
   const navigateTo = () => {
     navigate('/registration');
   };
+
+  const [emailExists, setEmailExists] = useState(null); // To track if email exists
+  const [emailError, setEmailError] = useState('');
+
+  // Function to check email existence
+  const checkEmailExists = async (email) => {
+    if (!email) {
+      setEmailExists(null);
+      setEmailError('');
+      return;
+    }
+  
+    try {
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}api/students/verify-email/${email}`);
+      console.log(data);
+      setEmailExists(data.success);
+      console.log(emailExists);
+      console.log(data.student.status);
+      setInstitCode(data.student.institutionCode);
+     
+      if (data.student.status === "accepted") {
+        setStatus(true);
+        setEmailError('This email is already registered.');
+      } else {
+        setEmailError('');
+      }
+    } catch (error) {
+      console.error('Error checking email existence:', error);
+      setEmailExists(null);
+      setEmailError('Unable to verify email. Please try again later.');
+    }
+  };
+
+
   const createAccount = async () => {
-    if(loading) return;
+    if (loading) return;
     setLoading(true);
     setInvalidEmail(false); // Reset email error state
     setUsernameTaken(false); // Reset username error state
     setInvitatioCodeErr(false);
+    setInvitationCodeMismatch(false);
+
     if (!validateFormData()) {
       setLoading(false);
       return;
     }
+
+    if (haveInvitationCode) {
+      if (!matchingInstitCode) {
+        setInvitatioCodeErr(true); 
+        setLoading(false);
+        return;
+      }
+      if (invitationCode !== matchingInstitCode) {
+        setInvitationCodeMismatch(true); 
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
-      const response = await axios.post(' http://localhost:5000/user/create-user', {
+      const response = await axios.post(process.env.REACT_APP_API_URL + 'user/create-user', {
         firstName,
         lastName,
         email,
@@ -61,30 +117,43 @@ const SignUp = ({type = 'student'}) => {
       });
 
       if (response.data.success) {
-          const savedUser = await saveUserOnCookies({...response.data.user})
-          await dispatch(setUser(savedUser));
-       
+        const savedUser = await saveUserOnCookies({ ...response.data.user })
+        await dispatch(setUser(savedUser));
+
+        
         //  if(response.data.user.accountType === 'student' ||  response.data.user.accountType === 'teacher')
-          if(response.data.user.accountType === 'student')
-          {
-            console.log(response.data.user._id);
+        if (response.data.user.accountType === 'student') {
+          console.log(response.data.user._id);
           const enrollResponse = await enrollStudentByInstitution(response.data.user._id);
-         
+
           if (enrollResponse.success) {
             console.log('User successfully enrolled in institution courses');
           } else {
             console.error('Enrollment failed:', enrollResponse.data.message);
           }
+
+          //Updating student status here
+        const statusResponse = await axios.post(
+          process.env.REACT_APP_API_URL + 'api/students/update-status',
+           { email: email }
+        );
+
+        if (statusResponse.data.success) {
+          console.log(`Status updated to 'accepted' for ${email}`, statusResponse.data);
+        } else {
+          console.error(`Failed to update status for ${email}:`, statusResponse.data.error);
         }
-          navigate('/');
-  
+
+        }
+        navigate('/');
+
       } else {
         // Handle errors related to email or username
         if (response.data.message === 'The email is already in use') {
           setInvalidEmail(true);
         } else if (response.data.message === 'The username is already taken') {
           setUsernameTaken(true);
-        }else if(response.data.message === 'Institution not found'){
+        } else if (response.data.message === 'Institution not found') {
           setInvitatioCodeErr(true)
         }
       }
@@ -96,87 +165,116 @@ const SignUp = ({type = 'student'}) => {
   };
 
   const googleSignUp = useGoogleLogin({
-	onSuccess: async (credentialResponse) => {
-	  console.log(credentialResponse);
-  
-	  // Get user info
-	  const userInfo = await axios.post(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${credentialResponse.access_token}`);
-	  console.log(userInfo);
+    onSuccess: async (credentialResponse) => {
+      console.log(credentialResponse);
 
-	const user = {
-		firstName: userInfo.data.given_name,
-		lastName: userInfo.data.last_name || '',
-		email: userInfo.data.email,
-		password: credentialResponse.access_token,
-		username: userInfo.data.email,
-		accountType: 'student',
-		googleAuth: 1,
-		enrolledCourses: [],
-		createdCourses: [],
-		accomplishments: []
-	};
-  
-	  // Check if user exists in the db
-	  const response = await axios.post(' http://localhost:5000/user/google-login', {
-		...user
-	  });
+      // Get user info
+      const userInfo = await axios.post(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${credentialResponse.access_token}`);
+      console.log(userInfo);
 
-	  console.log(response);
+      const user = {
+        firstName: userInfo.data.given_name,
+        lastName: userInfo.data.last_name || '',
+        email: userInfo.data.email,
+        password: credentialResponse.access_token,
+        username: userInfo.data.email,
+        accountType: 'student',
+        googleAuth: 1,
+        enrolledCourses: [],
+        createdCourses: [],
+        accomplishments: []
+      };
 
-	  // Set loggedin cookie with access token and email
-	  if (response.data.success) {
-		const saveOnCookies = await axios.post(' http://localhost:5000/cookies/save-user', {
-			...user
-		},{
-			withCredentials: true, // Include cookies in the request
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		});
+      // Check if user exists in the db
+      const response = await axios.post(process.env.REACT_APP_API_URL + 'user/google-login', {
+        ...user
+      });
 
-		console.log(saveOnCookies);
-		
-		if (saveOnCookies.status === 200) {
-			await dispatch(setUser(saveOnCookies.data.data));
-			navigate('/');
-		}
-	  }
-	},
-	onError: (credentialResponse) => {
-	  console.log(credentialResponse);
-	}
-});
+      console.log(response);
 
-  const validateFormData = () => {
-	setMissingData(false);
-	setInvalidEmail(false);
-	setSamePassword(false);
-	if (!email || !username || !password || !confirmPassword) {
-	  setMissingData(true);
-	  return false;
-	}
-	if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-	  setInvalidEmail(true);
-	  return false;
-	}
-	if (password.length < 8) {
-	  return false;
-	}
-	if (password !== confirmPassword) {
-	  setSamePassword(true);
-	  return false;
-	}
-	return true;
+      // Set loggedin cookie with access token and email
+      if (response.data.success) {
+        const saveOnCookies = await axios.post(process.env.REACT_APP_API_URL + 'cookies/save-user', {
+          ...user
+        }, {
+          withCredentials: true, // Include cookies in the request
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log(saveOnCookies);
+
+        if (saveOnCookies.status === 200) {
+          await dispatch(setUser(saveOnCookies.data.data));
+          navigate('/');
+        }
+      }
+    },
+    onError: (credentialResponse) => {
+      console.log(credentialResponse);
+    }
+  });
+
+  const validateFormData = async () => {
+    setMissingData(false);
+    setInvalidEmail(false);
+    setSamePassword(false);
+    setEmailError('');
+
+    if (!email || !username || !password || !confirmPassword) {
+      setMissingData(true);
+      return false;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setInvalidEmail(true);
+      setEmailError('Please enter a valid email address.');
+      return false;
+    }
+
+    try {
+      // Wait for email check to complete
+      await checkEmailExists(email);
+
+      // After email check, check the result
+      if (emailExists && pendingStatus ) {
+        setInvalidEmail(true);
+        setEmailError('This email is already registered.');
+        return false;
+      }
+    } catch (error) {
+      setEmailError('Unable to verify email. Please try again later.');
+      return false;
+    }
+
+    if (password.length < 8) {
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setSamePassword(true);
+      return false;
+    }
+
+    return true;
   };
 
   useEffect(() => {
-	setSamePassword(false); // Reset samePassword state when password or confirmPassword changes
+    if (!emailExists) {
+      setHaveInvitationCode(false);
+      setInvitationCode('');
+    }
+  }, [emailExists]);
+
+  useEffect(() => {
+    setSamePassword(false); // Reset samePassword state when password or confirmPassword changes
   }, [password, confirmPassword]);
   useEffect(() => {
-    if(!haveInvitationCode){
+    if (!haveInvitationCode) {
       setInvitationCode('')
     }
-  },[haveInvitationCode])
+  }, [haveInvitationCode])
   return (
     <div className="space-y-3 w-[400px]  md:p-0 p-2">
       <div>
@@ -224,11 +322,16 @@ const SignUp = ({type = 'student'}) => {
           placeholder="Email"
           type="text"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            checkEmailExists(e.target.value); //checking email here
+          }}
           className={`${styles.simple_text_input}`}
         />
+        {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
+        {invalidEmail && <p className="text-red-500 text-sm">Please use your official student email</p>}
         {/* {invalidEmail && <p className="text-red-500 text-sm">Email already exists, please login  </p>} */}
-        {invalidEmail && <p className="text-red-500 text-sm">Invalid Email type, or Email already being used   </p>}
+        {/* {invalidEmail && <p className="text-red-500 text-sm">Invalid Email type, or Email already being used   </p>} */}
         <label htmlFor="username" className="font-bold cursor-pointer pl-2 pt-2">
           Username
         </label>
@@ -242,33 +345,47 @@ const SignUp = ({type = 'student'}) => {
         />
         {usernameTaken && <p className="text-red-500 text-sm">Username is already taken, please try different username</p>}
         <label htmlFor="invcode" className="font-bold cursor-pointer pl-2 pt-2">
-          Are you linked to an institution? 
+          Are you linked to an institution?
         </label>
-          <div onClick={() => setHaveInvitationCode(!haveInvitationCode)} className={`cursor-pointer ml-3 slider-cointainer h-[20px] w-[35px]  relative rounded-full ${haveInvitationCode? 'linearGradient_ver1' : 'bg-stone-300'}`}>
-            <div className={`slider h-[25px] w-[25px] bg-white rounded-full  border ${haveInvitationCode? 'slider-on' : 'slider-off'} transition-all`}></div>
-          </div>
-        {haveInvitationCode && 
-          <>
-            <label htmlFor="invcode" className="font-bold cursor-pointer pl-2 pt-2">
-              Institution Code
-            </label>
-            <div className={`w-full ${styles.simple_text_input} flex justify-between items-center`}>
-              <input
-                id="invcode"
-                placeholder="#000000"
-                value={invitationCode}
-                onChange={(e) => setInvitationCode(e.target.value)}
-                className={`focus:outline-none w-full`}
-              />
-                <div className="hover-parent">
-                  <OnHoverExtraHud name={'Invitation Code?'}/>
-                  <BsQuestionCircleFill onClick={() => console.log('add a navigate to FAQ')} className="mx-1 text-black cursor-pointer" />
-                </div>
-            </div>
-            {invitatioCodeErr && <p className="text-red-500 text-sm">Institution code not found</p>}
+        <div
+          onClick={() => emailExists && setHaveInvitationCode(!haveInvitationCode)}
+          className={`cursor-pointer ml-3 slider-cointainer h-[20px] w-[35px] relative rounded-full ${haveInvitationCode ? 'linearGradient_ver1' : 'bg-stone-300'
+            } ${!emailExists ? 'cursor-not-allowed opacity-50' : ''}`}
+        >
+          <div
+            className={`slider h-[25px] w-[25px] bg-white rounded-full border ${haveInvitationCode ? 'slider-on' : 'slider-off'
+              } transition-all`}
+          ></div>
+        </div>
+        {haveInvitationCode && emailExists && (
+  <>
+    <label htmlFor="invcode" className="font-bold cursor-pointer pl-2 pt-2">
+      Institution Code
+    </label>
+    <div className={`w-full ${styles.simple_text_input} flex justify-between items-center`}>
+      <input
+        id="invcode"
+        placeholder="#000000"
+        value={invitationCode}
+        onChange={(e) => setInvitationCode(e.target.value)}
+        className={`focus:outline-none w-full`}
+      />
+      <div className="hover-parent">
+        <OnHoverExtraHud name={'Invitation Code?'} />
+        <BsQuestionCircleFill
+          onClick={() => console.log('add a navigate to FAQ')}
+          className="mx-1 text-black cursor-pointer"
+        />
+      </div>
+    </div>
+    {/* Display only one error based on priority */}
+    {invitatioCodeErr && <p className="text-red-500 text-sm">Institution code not found</p>}
+    {!invitatioCodeErr && invitationCodeMismatch && (
+      <p className="text-red-500 text-sm">Institution code does not match</p>
+    )}
+  </>
+)}
 
-          </>
-        }
 
 
         {/* <label className="font-bold cursor-pointer pl-2 pt-2">

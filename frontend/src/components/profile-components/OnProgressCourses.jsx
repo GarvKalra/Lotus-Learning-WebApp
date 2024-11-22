@@ -63,7 +63,7 @@ const OnProgressCourses = ({ id, progress, title, creatorName, dateCreated, user
           </div>
           <div>
             <p className='font-light text_linearGradient_ver1 text-end text-xs'>{title} - {progress.toFixed(2)}%</p>
-            <p className='font-light text-stone-500 text-end md:text-sm text-xs flex justify-end items-center hover:underline'>{title} <HiArrowRight className='ml-1' /></p>
+            <p className='font-light text-stone-500 text-end md:text-sm text-xs flex justify-end items-center hover:underline'>{creatorName} <HiArrowRight className='ml-1' /></p>
           </div>
         </div>
       </div>

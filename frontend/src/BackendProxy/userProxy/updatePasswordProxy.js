@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = ' http://localhost:5000/user';
+const BASE_URL = process.env.REACT_APP_API_URL + 'user';
 
 const updatePasswordProxy = async(_id, password) => {
     try {

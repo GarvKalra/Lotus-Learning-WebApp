@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5000/course';
+const BASE_URL = process.env.REACT_APP_API_URL + 'course';
 
 // Function to update any field in an enrollment document
 const updateEnrollment = async (enrollmentId, updates) => {
