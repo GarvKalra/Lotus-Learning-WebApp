@@ -8,7 +8,9 @@ import { SiGooglesheets } from "react-icons/si";
 import axios from "axios";
 import { useAuth } from "../../../../context/auth-context";
 import { useSelector } from "react-redux";
+import Pagination from "../../Profile/Pagination";
 
+const XLSX = require('xlsx');
 
 const AdminInvitationPage = () => {
   const [students, setStudents] = useState([]);
@@ -16,10 +18,18 @@ const AdminInvitationPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
   const [institutionCode, setInstitutionCode] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("All");
+
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20; // Limit per page
 
   const authUser = useSelector((state) => state.user);
   const navigate = useNavigate();
   const { type } = useParams();
+
+  
+ 
 
   useEffect(() => {
     if (!type) {
@@ -41,13 +51,18 @@ const AdminInvitationPage = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get(process.env.REACT_APP_API_URL + `api/students/${institutionCode}`);
-      setStudents(response.data);
+      const response = await axios.get(`http://localhost:5000/api/students/${institutionCode}`);
+      const fetchedStudents = response.data;
+  console.log(fetchedStudents);
+      setStudents(fetchedStudents); // Update the students state
+      setTotalPages(Math.ceil(fetchedStudents.length / itemsPerPage)); // Calculate total pages
+      setCurrentPage(1); // Reset to the first page
     } catch (error) {
       console.error("Error fetching students:", error);
       alert("Failed to fetch students list");
     }
   };
+  
 
   const handleFileChange = (e) => {
  
@@ -63,113 +78,76 @@ const AdminInvitationPage = () => {
   };
 
   const handleUpload = async () => {
-  
     if (!file) {
       alert("Please select a file first");
       return;
     }
-
-    const formData = new FormData();
-    formData.append('file', file);
   
-    
-    console.log("uploaded");
+    const formData = new FormData();
+    formData.append("file", file);
+  
     try {
-    
-      const response = await axios.post(process.env.REACT_APP_API_URL + `api/students/upload?institutionCode=${institutionCode}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await axios.post(
+        `http://localhost:5000/api/students/upload?institutionCode=${institutionCode}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+  
+      const { students: newStudents } = response.data;
+  
+      // Append new students to the existing list
+      setStudents((prevStudents) => {
+        const updatedStudents = [...prevStudents, ...newStudents];
+        setTotalPages(Math.ceil(updatedStudents.length / itemsPerPage)); // Recalculate total pages
+        return updatedStudents;
       });
-
-      alert(response.data.message);
-      fetchStudents(); // Refresh the list after upload
-      setFile(null); // Reset file input
+  
+      alert("Upload successful!");
     } catch (error) {
-      console.error(error);
-      alert('Failed to upload students.');
-    }
-  };
-  //const existingStudents = getStudents;             await axios.get('/admin/get-students'); // for getting all users from mongo
-
-  const handleStudentLogin = async () => {
-    // if (!institutionCode) {
-    //   alert("Institution code is missing.");
-    //   return;
-    // }
-    try {
-      // Get invited students
-      const studentsInvited = await axios.get(process.env.REACT_APP_API_URL + `api/students/${institutionCode}`);
-      console.log("Invited students:", studentsInvited.data);
-
-      // Get existing students
-      const code = institutionCode;
-      console.log(code);
-      const existingStudentsResponse = await axios.post(process.env.REACT_APP_API_URL + 'admin/get-students', { code });
-      const existingStudents = existingStudentsResponse.data;
-      console.log("Existing students:", existingStudents.data);
-
-      // Update status for matching students
-      for (const invitedStudent of studentsInvited.data) {
-        // Check if the invited student's email exists in existing students
-        const matchingStudent = existingStudents.data.find(
-          existingStudent => existingStudent.email === invitedStudent.email
-        );
-
-        if (matchingStudent) {
-          try {
-            console.log(`Updating status for ${invitedStudent.email}`);
-
-            const response = await axios.post(
-              process.env.REACT_APP_API_URL + 'api/students/update-status',
-               { email: invitedStudent.email }
-            );
-
-            if (response.data.success) {
-              console.log(`Status updated to 'accepted' for ${invitedStudent.email}`, response.data);
-            } else {
-              console.error(`Failed to update status for ${invitedStudent.email}:`, response.data.error);
-            }
-          } catch (updateError) {
-            console.error(`Error updating status for ${invitedStudent.email}:`,
-              updateError.response?.data || updateError.message
-            );
-          }
-        } else {
-          console.log(`No matching existing student found for ${invitedStudent.email}`);
-        }
-      }
-
-      // Refresh the students list after updates
-      await fetchStudents();
-      console.log("Student list refreshed after updates");
-
-    } catch (error) {
-      console.error('Error in bulk status update:', error);
-      if (error.response?.status === 404) {
-        alert('Unable to fetch students. Please check if the API is running.');
+      console.error("Error uploading file:", error);
+  
+      if (error.response?.data?.message) {
+        alert(`Error: ${error.response.data.message}`);
       } else {
-        alert('An error occurred while updating student statuses. Please try again.');
+        alert("Failed to upload file. Please try again.");
       }
     }
   };
-
+  
   const handleSort = () => {
-    const newDirection = sortDirection === "asc" ? "desc" : "asc";
-    setSortDirection(newDirection);
-    const sortedStudents = [...students].sort((a, b) => {
-      if (newDirection === "asc") {
-        return a.email.localeCompare(b.email);
-      }
-      return b.email.localeCompare(a.email);
-    });
-    setStudents(sortedStudents);
+    setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
   };
 
-  const filteredStudents = students.filter(student =>
-    student.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleFilterStatusChange = (e) => {
+    setFilterStatus(e.target.value);
+    setCurrentPage(1); // Reset to the first page
+  };
+  
+  const filteredStudents = students.filter((student) => {
+    if (filterStatus !== "All" && student.status !== filterStatus) return false;
+    if (!student.email.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  });
+
+  const sortedStudents = filteredStudents.sort((a, b) => {
+    return sortDirection === "asc" ? a.email.localeCompare(b.email) : b.email.localeCompare(a.email);
+  });
+
+  // Update pagination dynamically
+  useEffect(() => {
+    setTotalPages(Math.ceil(sortedStudents.length / itemsPerPage));
+    if (currentPage > Math.ceil(sortedStudents.length / itemsPerPage)) {
+      setCurrentPage(1);
+    }
+  }, [sortedStudents, currentPage]);
+
+  // Paginate sorted and filtered students
+  const currentStudents = sortedStudents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
-  console.log(filteredStudents);
+
+
 
   return (
     <div className="relative h-full">
@@ -212,6 +190,15 @@ const AdminInvitationPage = () => {
         <div className="bg-white rounded-full flex justify-between items-center py-2 px-4 mt-2">
           <p className="font-semibold text-lg">Invitations</p>
           <div className="flex items-center space-x-3">
+          <select
+              value={filterStatus}
+              onChange={handleFilterStatusChange}
+              className="text-sm border px-2 py-1 rounded-full"
+            >
+              <option value="All">All</option>
+              <option value="Pending">Pending</option>
+              <option value="Accepted">Accepted</option>
+            </select>
             <button
               onClick={handleSort}
               className="cursor-pointer hover:bg-stone-100 p-2 rounded-full transition-all"
@@ -242,35 +229,37 @@ const AdminInvitationPage = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {filteredStudents.map((student) => (
-                <tr key={student.email} className="border-b">
-                  <td className="py-2">{student.email}</td>
-                  <td className="py-2">{new Date(student.sentOn).toLocaleString()}</td>
-                  <td className="py-2">
-                    <div className="flex justify-end">
-                      <div className={`px-2 py-1 text-sm flex items-center justify-center ${student.status === "accepted" ? "bg-green-500" : "bg-yellow-500"} rounded-full`}>
-                        <p className={`font-medium ${student.status === "Accepted" ? "text-green-100" : "text-yellow-100"}`}>
-                          {student.status}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-2">
-                    <div className="flex justify-end">
-                      {student.status === "Pending" && (
-                        <button
-                          onClick={() => handleStudentLogin()}
-                          className="bg-blue-500 text-white px-4 py-1 rounded-full font-medium hover:bg-blue-600 transition-all">
-                          Check Status
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {currentStudents.map((student, index) => (
+    <tr key={index} className="border-b">
+      <td className="py-2">{student.email}</td>
+      <td className="py-2">{new Date(student.sentOn).toLocaleString()}</td>
+      <td className="py-2">
+        <div className="flex justify-end">
+          <div
+            className={`px-2 py-1 text-sm flex items-center justify-center ${
+              student.status === "Accepted" ? "bg-green-500" : "bg-yellow-500"
+            } rounded-full`}
+          >
+            <p
+              className={`font-medium ${
+                student.status === "Accepted" ? "text-green-100" : "text-yellow-100"
+              }`}
+            >
+              {student.status}
+            </p>
+          </div>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
           </table>
-          {filteredStudents.length === 0 && (
+          <Pagination
+  totalPages={totalPages}
+  currentPage={currentPage}
+  onPageChange={(page) => setCurrentPage(page)}
+/>
+          {sortedStudents.length === 0 && (
             <div className="text-center py-4 text-gray-500">
               No students found
             </div>
