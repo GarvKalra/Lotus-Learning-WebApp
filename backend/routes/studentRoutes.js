@@ -112,7 +112,6 @@ router.delete('/files/:fileId', async (req, res) => {
     const studentEmails = studentsToDelete.map(student => student.email);
 
     await Student.deleteMany({ file: fileId });
-    console.log(studentsToDelete.length);
 
     // Find and delete users with matching emails
     const deletedUsers = await User.deleteMany({ email: { $in: studentEmails } });
@@ -143,17 +142,37 @@ router.get('/files', async (req, res) => {
 
 router.get('/files/:fileId/students', async (req, res) => {
   try {
-    const { fileId } = req.params;
+      const { fileId } = req.params;
 
-    const file = await File.findById(fileId).populate('students'); // Populate all students
-    if (!file) {
-      return res.status(404).json({ message: 'File not found.' });
-    }
+      // Find the file and populate its students
+      const file = await File.findById(fileId).populate('students');
+      if (!file) {
+          return res.status(404).json({ message: 'File not found.' });
+      }
 
-    res.status(200).json({ students: file.students }); // Return all students
+      // Get all student emails
+      const studentEmails = file.students.map((student) => student.email);
+
+      // Find matching users in the User collection
+      const matchingUsers = await User.find({ email: { $in: studentEmails } });
+
+      if (matchingUsers.length > 0) {
+          const matchedEmails = matchingUsers.map((user) => user.email);
+
+          // Update the status of matching students to "Accepted"
+          await Student.updateMany(
+              { email: { $in: matchedEmails } },
+              { $set: { status: 'Accepted' } }
+          );
+      }
+
+      // Re-fetch students to reflect updated statuses
+      const updatedFile = await File.findById(fileId).populate('students');
+
+      res.status(200).json({ students: updatedFile.students });
   } catch (error) {
-    console.error('Error fetching students:', error);
-    res.status(500).json({ message: 'Failed to fetch students.' });
+      console.error('Error fetching and updating students:', error);
+      res.status(500).json({ message: 'Failed to fetch and update students.' });
   }
 });
 
