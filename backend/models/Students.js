@@ -19,7 +19,7 @@ const studentSchema = new mongoose.Schema({
         enum: ['Pending', 'Accepted'], 
         default: 'Pending'
     },
-    
+    file: { type: mongoose.Schema.Types.ObjectId, ref: 'File' }
 }, {
     timestamps: true
 });
