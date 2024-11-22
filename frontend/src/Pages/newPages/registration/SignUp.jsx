@@ -134,7 +134,7 @@ const SignUp = ({ type = 'student' }) => {
 
           //Updating student status here
         const statusResponse = await axios.post(
-          'http://localhost:5000/api/students/update-status',
+          process.env.REACT_APP_API_URL + 'api/students/update-status',
            { email: email }
         );
 
