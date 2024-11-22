@@ -21,7 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(
   cors({
     credentials: true,
-    origin: ' http://localhost:3000',
+    origin: 'http://localhost:3000',
   })
 );
 
@@ -50,6 +50,8 @@ app.use(isAuth);
 const cookeHandler = require('./middleware/cookie-handler');
 app.use('/cookies', cookeHandler);
 
+const fileUpload = require('express-fileupload');
+app.use(fileUpload({ useTempFiles: true }));
 // ROUTES
 const userRoutes = require('./routes/user-routes/user-routes');
 app.use('/user', userRoutes);

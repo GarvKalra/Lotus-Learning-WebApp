@@ -5,7 +5,7 @@ import { CiTrash } from "react-icons/ci";
 import { CiStar } from "react-icons/ci";
 import { useNavigate } from 'react-router-dom';
 
-const OnProgressCourses = ({ id, progress, title,creatorName,dateCreated, userId }) => {
+const OnProgressCourses = ({ id, progress, title, creatorName, dateCreated, userId, imageUrl }) => {
   const divRef = useRef(null);
   const navigate = useNavigate();
   const [openOptions, setOpenOptions] = useState(false);
@@ -35,15 +35,22 @@ const OnProgressCourses = ({ id, progress, title,creatorName,dateCreated, userId
         dateCreated: dateCreated,
         item:null,
         userId:userId,
+        imageUrl:imageUrl,
       }
     });
     }
   }
+  console.log("imageUrl: ", imageUrl); // Debugging line 
 
   return (
     <div onClick={(e) => handleClick(e)} className='cursor-pointer w-full bg-white border p-2 relative no-select'>
       <div className='flex items-center justify-between space-x-2 h-full'>
-        <img className='md:h-[90px] md:w-[180px] h-[70px] w-[130px] object-cover rounded-md' src='https://contenthub-static.grammarly.com/blog/wp-content/uploads/2023/07/Subject-Complement.png'/>
+        {/* Check if imageUrl is valid */}
+        <img 
+          className='md:h-[90px] md:w-[180px] h-[70px] w-[130px] object-cover rounded-md' 
+          src={imageUrl ? imageUrl : 'https://contenthub-static.grammarly.com/blog/wp-content/uploads/2023/07/Subject-Complement.png'} 
+          alt="Course Thumbnail"
+        />
         <div className='flex flex-col justify-between items-end h-full py-1'>
           <div ref={divRef}>
             <div className={`rounded-full p-1 ${openOptions && 'bg-stone-100'}`} onClick={() => setOpenOptions(!openOptions)}>
@@ -65,6 +72,6 @@ const OnProgressCourses = ({ id, progress, title,creatorName,dateCreated, userId
       </div>
     </div>
   );
-}
+};
 
 export default OnProgressCourses;
