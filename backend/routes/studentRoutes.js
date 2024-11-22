@@ -108,10 +108,11 @@ router.delete('/files/:fileId', async (req, res) => {
     }
 
     // Find and delete students associated with the file
-    const studentsToDelete = await Student.find({ files: fileId });
+    const studentsToDelete = await Student.find({ file: fileId });
     const studentEmails = studentsToDelete.map(student => student.email);
 
-    await Student.deleteMany({ files: fileId });
+    await Student.deleteMany({ file: fileId });
+    console.log(studentsToDelete.length);
 
     // Find and delete users with matching emails
     const deletedUsers = await User.deleteMany({ email: { $in: studentEmails } });
@@ -127,37 +128,6 @@ router.delete('/files/:fileId', async (req, res) => {
   }
 });
 
-
-router.delete('/files/:fileId', async (req, res) => {
-  try {
-    const { fileId } = req.params;
-
-    // Find the file and delete it
-    const deletedFile = await File.findByIdAndDelete(fileId);
-
-    if (!deletedFile) {
-      return res.status(404).json({ message: 'File not found.' });
-    }
-
-    // Find and delete students associated with the file
-    const studentsToDelete = await Student.find({ file: fileId });
-    const studentEmails = studentsToDelete.map(student => student.email);
-
-    await Student.deleteMany({ file: fileId });
-
-    // Find and delete users with matching emails
-    const deletedUsers = await User.deleteMany({ email: { $in: studentEmails } });
-
-    res.status(200).json({
-      message: 'File deleted successfully.',
-      deletedStudents: studentsToDelete.length,
-      deletedUsers: deletedUsers.deletedCount, 
-    });
-  } catch (error) {
-    console.error('Error deleting file:', error);
-    res.status(500).json({ message: 'Failed to delete file.' });
-  }
-});
 
 
 router.get('/files', async (req, res) => {
