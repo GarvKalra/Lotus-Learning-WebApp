@@ -33,6 +33,9 @@ const courseSchema = new mongoose.Schema({
     type: [String],
     required: true,
   },
+  imageUrl:{//added image
+    type: String,
+  },
   age: {
     type: String,
     required: true,

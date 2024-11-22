@@ -5,12 +5,18 @@ import { HiOutlineUser } from "react-icons/hi";
 import { VscEdit } from "react-icons/vsc";
 import OnHoverExtraHud from "../OnHoverExtraHud";
 
-const MyCoursesCard = () => {
+const MyCoursesCard = ({ course }) => {
+  const defaultImage =
+    "https://contenthub-static.grammarly.com/blog/wp-content/uploads/2023/07/Subject-Complement.png"; // Default image
+
+  const imageUrl = course.imageUrl || defaultImage; // Use imageUrl from the course or fallback to default
+
   return (
     <div className="flex items-center space-x-2 border rounded-sm p-2 bg-white">
       <img
         className="md:h-[80px] h-[60px] md:w-[180px] w-[120px] object-fill rounded-md"
-        src="https://contenthub-static.grammarly.com/blog/wp-content/uploads/2023/07/Subject-Complement.png"
+        src={imageUrl} // Display the course image or default image
+        alt={course.title} 
       />
       <div className="flex w-full justify-between items-center">
         <div className="md:w-[40%]">

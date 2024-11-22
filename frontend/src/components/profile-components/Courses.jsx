@@ -56,6 +56,7 @@ const Courses = ({ courses, userId }) => {
               creatorName = {course.creator.username}
               dateCreated = {course.createdAt}
               userId = {userId}
+              imageUrl={course.imageUrl}
             />
           ))
         ) : (
