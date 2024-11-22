@@ -35,6 +35,9 @@ const SignUp = ({ type = 'student' }) => {
   const [usernameTaken, setUsernameTaken] = useState(false);
   const [passwordVisibility, setPasswordVisibility] = useState(false);
   const [confirmPasswordVisibility, setConfirmPasswordVisibility] = useState(false);
+  const [matchingInstitCode, setInstitCode] = useState('');
+  const [invitationCodeMismatch, setInvitationCodeMismatch] = useState(false); 
+  const [pendingStatus, setStatus] = useState(false);
 
 
 
@@ -56,9 +59,13 @@ const SignUp = ({ type = 'student' }) => {
     try {
       const { data } = await axios.get(`${process.env.REACT_APP_API_URL}api/students/verify-email/${email}`);
       console.log(data);
-      setEmailExists(data.exists);
-      
-      if (data.exists) {
+      setEmailExists(data.success);
+      console.log(emailExists);
+      console.log(data.student.status);
+      setInstitCode(data.student.institutionCode);
+     
+      if (data.student.status === "accepted") {
+        setStatus(true);
         setEmailError('This email is already registered.');
       } else {
         setEmailError('');
@@ -77,10 +84,26 @@ const SignUp = ({ type = 'student' }) => {
     setInvalidEmail(false); // Reset email error state
     setUsernameTaken(false); // Reset username error state
     setInvitatioCodeErr(false);
+    setInvitationCodeMismatch(false);
+
     if (!validateFormData()) {
       setLoading(false);
       return;
     }
+
+    if (haveInvitationCode) {
+      if (!matchingInstitCode) {
+        setInvitatioCodeErr(true); 
+        setLoading(false);
+        return;
+      }
+      if (invitationCode !== matchingInstitCode) {
+        setInvitationCodeMismatch(true); 
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       const response = await axios.post(process.env.REACT_APP_API_URL + 'user/create-user', {
         firstName,
@@ -97,6 +120,7 @@ const SignUp = ({ type = 'student' }) => {
         const savedUser = await saveUserOnCookies({ ...response.data.user })
         await dispatch(setUser(savedUser));
 
+        
         //  if(response.data.user.accountType === 'student' ||  response.data.user.accountType === 'teacher')
         if (response.data.user.accountType === 'student') {
           console.log(response.data.user._id);
@@ -107,6 +131,19 @@ const SignUp = ({ type = 'student' }) => {
           } else {
             console.error('Enrollment failed:', enrollResponse.data.message);
           }
+
+          //Updating student status here
+        const statusResponse = await axios.post(
+          'http://localhost:5000/api/students/update-status',
+           { email: email }
+        );
+
+        if (statusResponse.data.success) {
+          console.log(`Status updated to 'accepted' for ${email}`, statusResponse.data);
+        } else {
+          console.error(`Failed to update status for ${email}:`, statusResponse.data.error);
+        }
+
         }
         navigate('/');
 
@@ -201,7 +238,7 @@ const SignUp = ({ type = 'student' }) => {
       await checkEmailExists(email);
 
       // After email check, check the result
-      if (emailExists) {
+      if (emailExists && pendingStatus ) {
         setInvalidEmail(true);
         setEmailError('This email is already registered.');
         return false;
@@ -321,30 +358,33 @@ const SignUp = ({ type = 'student' }) => {
           ></div>
         </div>
         {haveInvitationCode && emailExists && (
-          <>
-            <label htmlFor="invcode" className="font-bold cursor-pointer pl-2 pt-2">
-              Institution Code
-            </label>
-            <div className={`w-full ${styles.simple_text_input} flex justify-between items-center`}>
-              <input
-                id="invcode"
-                placeholder="#000000"
-                value={invitationCode}
-                onChange={(e) => setInvitationCode(e.target.value)}
-                className={`focus:outline-none w-full`}
-              />
-              <div className="hover-parent">
-                <OnHoverExtraHud name={'Invitation Code?'} />
-                <BsQuestionCircleFill
-                  onClick={() => console.log('add a navigate to FAQ')}
-                  className="mx-1 text-black cursor-pointer"
-                />
-              </div>
-            </div>
-            {invitatioCodeErr && <p className="text-red-500 text-sm">Institution code not found</p>}
-          </>
-        )}
-
+  <>
+    <label htmlFor="invcode" className="font-bold cursor-pointer pl-2 pt-2">
+      Institution Code
+    </label>
+    <div className={`w-full ${styles.simple_text_input} flex justify-between items-center`}>
+      <input
+        id="invcode"
+        placeholder="#000000"
+        value={invitationCode}
+        onChange={(e) => setInvitationCode(e.target.value)}
+        className={`focus:outline-none w-full`}
+      />
+      <div className="hover-parent">
+        <OnHoverExtraHud name={'Invitation Code?'} />
+        <BsQuestionCircleFill
+          onClick={() => console.log('add a navigate to FAQ')}
+          className="mx-1 text-black cursor-pointer"
+        />
+      </div>
+    </div>
+    {/* Display only one error based on priority */}
+    {invitatioCodeErr && <p className="text-red-500 text-sm">Institution code not found</p>}
+    {!invitatioCodeErr && invitationCodeMismatch && (
+      <p className="text-red-500 text-sm">Institution code does not match</p>
+    )}
+  </>
+)}
 
 
 

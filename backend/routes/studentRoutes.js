@@ -17,56 +17,74 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
     const { institutionCode } = req.query;
-    console.log(institutionCode);
+
     if (!file) {
-      return res.status(400).json({ message: "No file uploaded." });
+      return res.status(400).json({ message: 'No file uploaded.' });
     }
 
-
+    // Read the Excel file
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet);
 
+    const emails = data.map((row) => row.Email);
 
-    const emails = data.map(row => row.Email);
-
-
-    console.log(emails);
-
-
-    const studentPromises = emails.map(async (email) => {
-      return await Student.updateOne(
-        { email },
-        {
-          $set: { institutionCode, sentOn: new Date(), status: "Pending" }, 
-          $setOnInsert: { email } 
-        },
-        { upsert: true }
-      );
+    // Check for duplicate emails within the uploaded Excel file
+    const emailSet = new Set();
+    const duplicateEmails = emails.filter((email) => {
+      if (emailSet.has(email)) {
+        return true;
+      }
+      emailSet.add(email);
+      return false;
     });
 
-    await Promise.all(studentPromises);
+    if (duplicateEmails.length > 0) {
+      return res.status(400).json({
+        message: `The uploaded file contains duplicate emails: ${duplicateEmails.join(', ')}`,
+      });
+    }
 
+    // Check for emails that already exist in the database
+    const existingEmails = await Student.find({ email: { $in: emails } }).select('email');
+    const existingEmailList = existingEmails.map((student) => student.email);
 
-    const updatedStudents = await Student.find({ email: { $in: emails } }); // Fetch updated students
-    res.status(200).json({ message: "File uploaded and processed successfully!", students: updatedStudents });
+    if (existingEmailList.length > 0) {
+      return res.status(400).json({
+        message: `The following emails already exist in the database: ${existingEmailList.join(', ')}`,
+      });
+    }
+
+    // Prepare entries for saving
+    const newStudents = emails.map((email) => ({
+      email,
+      institutionCode,
+      sentOn: new Date(),
+      status: 'Pending',
+    }));
+
+    // Bulk insert entries
+    await Student.insertMany(newStudents);
+
+    res.status(200).json({
+      message: `File uploaded successfully.`,
+      students: newStudents,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to process the file." });
+    console.error('Error uploading file:', error);
+    res.status(500).json({ message: 'Failed to upload file.' });
   }
 });
 
-//fetch all students
 router.get('/:institutionCode', async (req, res) => {
   try {
     const institutionCode = req.params.institutionCode;
-    console.debug(institutionCode);
-    const students = await Students.find({institutionCode});
-    res.json(students);
+    const students = await Student.find({ institutionCode }).sort({ email: 1 }); 
+    res.status(200).json(students);
   } catch (error) {
     console.error('Error fetching students:', error);
-    res.status(500).json({ message: "Error fetching students" });
+    res.status(500).json({ message: 'Error fetching students' });
   }
 });
 
