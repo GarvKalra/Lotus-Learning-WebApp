@@ -46,10 +46,11 @@ const AdminInvitationPage = () => {
         selectedFile.type === "application/vnd.ms-excel")
     ) {
       setFile(selectedFile);
+      console.log("File selected:", selectedFile);
     } else {
       alert("Please upload a valid Excel file (.xlsx or .xls)");
-      e.target.value = null;
     }
+    e.target.value = null;
   };
 
   const handleUpload = async () => {
@@ -79,6 +80,7 @@ const AdminInvitationPage = () => {
       );
 
       alert("File uploaded successfully!");
+    
       setFile(null);
       fetchUploadedFiles();
     } catch (error) {
@@ -146,11 +148,12 @@ const AdminInvitationPage = () => {
                 Upload Excel File
               </span>
               <input
-                type="file"
-                onChange={handleFileChange}
-                accept=".xlsx, .xls"
-                style={{ display: "none" }}
-              />
+  type="file"
+  key={file ? file.name : "default"}
+  onChange={handleFileChange}
+  accept=".xlsx, .xls"
+  style={{ display: "none" }}
+/>
               <SiGooglesheets className="text-green-500" />
             </label>
             <button
