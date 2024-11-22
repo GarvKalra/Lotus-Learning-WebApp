@@ -114,7 +114,6 @@ const AdminInvitationPage = () => {
     }
   };
   
-  
   const handleSort = () => {
     setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
   };

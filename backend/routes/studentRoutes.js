@@ -80,6 +80,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 router.get('/:institutionCode', async (req, res) => {
   try {
     const institutionCode = req.params.institutionCode;
+
     const students = await Student.find({ institutionCode }).sort({ email: 1 }); 
     res.status(200).json(students);
   } catch (error) {

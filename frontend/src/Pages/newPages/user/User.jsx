@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import logoText from "../../../Images/lotusletters.webp";
 import { IoMdBookmarks, IoMdNotifications } from "react-icons/io";
 import { IoIosSettings } from "react-icons/io";
@@ -13,6 +13,7 @@ import TeacherProfile from "../Profile/teacher-profile/TeacherProfile";
 import NotificationsProfile from "../Profile/NotificationsProfile";
 import SettingsProfile from "../Profile/SettingsProfile";
 import StudentProfile from "../Profile/student-profile/StudentProfile";
+import { clearUser } from "../../../redux/slice/user/userSlice";
 
 const User = () => {
   const { screen } = useParams();
@@ -20,6 +21,7 @@ const User = () => {
   const authUser = useSelector((state) => state.user);
   const [educator, setEducator] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (!screen) {
@@ -53,10 +55,17 @@ const User = () => {
   };
 
   const logout = async () => {
-    deleteUserOnCookies();
-    navigate("/registration");
-    window.location.reload();
+    try {
+      // Clear user data on logout
+      await deleteUserOnCookies();
+      dispatch(clearUser()); 
+      navigate('/registration');
+      window.location.reload();
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
+
 
   return (
     <div className="h-full w-full flex">

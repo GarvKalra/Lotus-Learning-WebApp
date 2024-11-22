@@ -25,6 +25,9 @@ const GeneralNavbar = ({ fixed = true }) => {
   const [results, setResults] = useState([]);
   const hasFetched = useRef(false);
 
+  const wsRef = useRef(null);
+  const reconnectAttempts = useRef(0);
+
   const searchRef = useRef(null); 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -119,48 +122,70 @@ const GeneralNavbar = ({ fixed = true }) => {
     }
   }, [query, isLogedIn]); 
 
-useEffect(() => {
-  if (isLogedIn) {
-    const ws = new WebSocket(BASE_WS_URL);
+  useEffect(() => {
+    if (isLogedIn) {
+      const connectWebSocket = () => {
+        wsRef.current = new WebSocket(BASE_WS_URL);
 
-    ws.onopen = () => {
-      console.log("Connected to WebSocket");
-    };
+        wsRef.current.onopen = () => {
+          console.log("Connected to WebSocket");
+          reconnectAttempts.current = 0; // Reset reconnect attempts
+        };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+        wsRef.current.onmessage = (event) => {
+          const data = JSON.parse(event.data);
 
-      if (data.action === 'new' && data.notification.userId === authUser._id) {
-        // Prepend new notifications from WebSocket
-        setNotifications(prevNotifications => [data.notification, ...prevNotifications]);
-      } else if (data.action === 'delete') {
-        setNotifications(prevNotifications =>
-          prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
-        );
-      } else if (data.action === 'update') {
-        setNotifications(prevNotifications =>
-          prevNotifications.map(notification =>
-            data.notificationIds.includes(notification._id)
-              ? { ...notification, status: 'read' }
-              : notification
-          )
-        );
-      }
-    };
+          if (data.action === 'new' && data.notification.userId === authUser._id) {
+            // Prepend new notifications from WebSocket
+            setNotifications(prevNotifications => [data.notification, ...prevNotifications]);
+          } else if (data.action === 'delete') {
+            setNotifications(prevNotifications =>
+              prevNotifications.filter(notification => !data.notificationIds.includes(notification._id))
+            );
+          } else if (data.action === 'update') {
+            setNotifications(prevNotifications =>
+              prevNotifications.map(notification =>
+                data.notificationIds.includes(notification._id)
+                  ? { ...notification, status: 'read' }
+                  : notification
+              )
+            );
+          }
+        };
 
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
+        wsRef.current.onclose = (event) => {
+          console.log("WebSocket connection closed", event);
+          if (!event.wasClean) {
+            attemptReconnect();
+          }
+        };
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
+        wsRef.current.onerror = (error) => {
+          console.error("WebSocket error:", error);
+          wsRef.current.close();
+        };
+      };
 
-    return () => {
-      ws.close();
-    };
-  }
-}, [isLogedIn]);
+      const attemptReconnect = () => {
+        if (reconnectAttempts.current < 5) {
+          reconnectAttempts.current += 1;
+          const timeout = Math.min(1000 * 2 ** reconnectAttempts.current, 30000); // Exponential backoff, max 30s
+          console.log(`Reconnecting in ${timeout / 1000}s...`);
+          setTimeout(() => connectWebSocket(), timeout);
+        } else {
+          console.error("Max reconnect attempts reached. WebSocket will not reconnect.");
+        }
+      };
+
+      connectWebSocket();
+
+      return () => {
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+      };
+    }
+  }, [isLogedIn]); 
 
   return (
     <div
@@ -182,37 +207,39 @@ useEffect(() => {
           className="h-full p-[.8rem] cursor-pointer md:hidden block"
         />
 
-        <div className="relative w-[440px]" ref={searchRef}>
-          <div
-            className={`${styles.simple_text_input} rounded-full flex justify-between items-center`}
-          >
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search"
-              className="focus:outline-none px-1 w-full"
-            />
-            <MdOutlineSearch className="text-xl cursor-pointer" />
-          </div>
-
-          {isLogedIn && results.length > 0 && (
-            <div className="absolute top-full mt-1 bg-white shadow-lg rounded-md p-2 w-full z-40">
-              <h2 className="text-xl font-semibold">Search Results</h2>
-              <ul className="list-disc list-inside">
-                {results.map((course) => (
-                  <li
-                    key={course._id}
-                    className="cursor-pointer text-blue-600 hover:underline"
-                    onClick={() => navigate('/course/learn?id='+course._id)}
-                  >
-                    {course.title}
-                  </li>
-                ))}
-              </ul>
+{isLogedIn && (
+          <div className="relative w-[440px]" ref={searchRef}>
+            <div
+              className={`${styles.simple_text_input} rounded-full flex justify-between items-center`}
+            >
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search"
+                className="focus:outline-none px-1 w-full"
+              />
+              <MdOutlineSearch className="text-xl cursor-pointer" />
             </div>
-          )}
-        </div>
+
+            {results.length > 0 && (
+              <div className="absolute top-full mt-1 bg-white shadow-lg rounded-md p-2 w-full z-40">
+                <h2 className="text-xl font-semibold">Search Results</h2>
+                <ul className="list-disc list-inside">
+                  {results.map((course) => (
+                    <li
+                      key={course._id}
+                      className="cursor-pointer text-blue-600 hover:underline"
+                      onClick={() => navigate(`/course/learn?id=${course._id}`)}
+                    >
+                      {course.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         {isLogedIn ? (
           <div className="flex items-center space-x-3 mx-2">
