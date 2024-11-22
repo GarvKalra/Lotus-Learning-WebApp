@@ -5,7 +5,7 @@ const Student = require('../models/Students.js');
 const router = express.Router();
 const User = require("../models/User.js");
 const Students = require('../models/Students.js');
-
+const File = require('../models/File.js')
 
 
 const storage = multer.memoryStorage();
@@ -13,7 +13,8 @@ const upload = multer({ storage });
 
 
 // POST route for file upload
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/uploads', upload.single('file'), async (req, res) => {
+  console.log('File upload route triggered');
   try {
     const file = req.file;
     const { institutionCode } = req.query;
@@ -47,35 +48,111 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }
 
     // Check for emails that already exist in the database
-    const existingEmails = await Student.find({ email: { $in: emails } }).select('email');
-    const existingEmailList = existingEmails.map((student) => student.email);
+    const existingStudents = await Students.find({ email: { $in: emails } });
+    const existingEmailList = existingStudents.map((student) => student.email);
 
     if (existingEmailList.length > 0) {
       return res.status(400).json({
-        message: `The following emails already exist in the database: ${existingEmailList.join(', ')}`,
+        message: `The uploaded file contains emails that already exist in the database: ${existingEmailList.join(', ')}`,
       });
     }
 
-    // Prepare entries for saving
+    // Create a new file record in the database
+    const newFile = new File({
+      fileName: file.originalname,
+      institutionCode,
+      uploadedAt: new Date(),
+      studentCount: data.length,
+    });
+    await newFile.save();
+
+    // Prepare new students
     const newStudents = emails.map((email) => ({
       email,
       institutionCode,
       sentOn: new Date(),
       status: 'Pending',
+      file: [newFile._id],
     }));
 
-    // Bulk insert entries
-    await Student.insertMany(newStudents);
+    // Insert new students into the database
+    const savedNewStudents = await Students.insertMany(newStudents);
+
+    // Update the file with all linked students
+    newFile.students = savedNewStudents.map((s) => s._id);
+    await newFile.save();
 
     res.status(200).json({
-      message: `File uploaded successfully.`,
-      students: newStudents,
+      message: 'File uploaded successfully.',
+      file: newFile,
+      students: savedNewStudents,
     });
   } catch (error) {
     console.error('Error uploading file:', error);
     res.status(500).json({ message: 'Failed to upload file.' });
   }
 });
+
+router.delete('/files/:fileId', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+
+    // Find the file and delete it
+    const deletedFile = await File.findByIdAndDelete(fileId);
+
+    if (!deletedFile) {
+      return res.status(404).json({ message: 'File not found.' });
+    }
+
+    // Find and delete students associated with the file
+    const studentsToDelete = await Student.find({ files: fileId });
+    const studentEmails = studentsToDelete.map(student => student.email);
+
+    await Student.deleteMany({ files: fileId });
+
+    // Find and delete users with matching emails
+    const deletedUsers = await User.deleteMany({ email: { $in: studentEmails } });
+
+    res.status(200).json({
+      message: 'File deleted successfully.',
+      deletedStudents: studentsToDelete.length,
+      deletedUsers: deletedUsers.deletedCount, // Count of users deleted
+    });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    res.status(500).json({ message: 'Failed to delete file.' });
+  }
+});
+
+
+router.get('/files', async (req, res) => {
+  try {
+    const files = await File.find().sort({ uploadedOn: -1 }); // Latest first
+    res.status(200).json(files);
+  } catch (error) {
+    console.error('Error fetching files:', error);
+    res.status(500).json({ message: 'Failed to fetch files.' });
+  }
+});
+
+
+router.get('/files/:fileId/students', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+
+    const file = await File.findById(fileId).populate('students'); // Populate all students
+    if (!file) {
+      return res.status(404).json({ message: 'File not found.' });
+    }
+
+    res.status(200).json({ students: file.students }); // Return all students
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ message: 'Failed to fetch students.' });
+  }
+});
+
+
 
 router.get('/:institutionCode', async (req, res) => {
   try {
