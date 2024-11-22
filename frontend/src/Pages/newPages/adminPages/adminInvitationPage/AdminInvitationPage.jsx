@@ -25,11 +25,13 @@ const AdminInvitationPage = () => {
 
   const fetchUploadedFiles = async () => {
     try {
+
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}api/students/files`
       );
       console.log("Fetched files:", response.data);
       setFiles(response.data);
+
     } catch (error) {
       console.error("Error fetching uploaded files:", error);
       alert("Failed to fetch uploaded files.");
@@ -60,6 +62,7 @@ const AdminInvitationPage = () => {
     formData.append("file", file);
 
     try {
+
       const institutionCode = authUser?.institution?.code;
 
       if (!institutionCode) {
@@ -69,6 +72,7 @@ const AdminInvitationPage = () => {
 
       await axios.post(
         `${process.env.REACT_APP_API_URL}api/students/uploads?institutionCode=${institutionCode}`,
+
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
