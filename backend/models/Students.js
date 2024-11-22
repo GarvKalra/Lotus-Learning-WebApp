@@ -10,6 +10,9 @@ const studentSchema = new mongoose.Schema({
         required: true,
         unique: true
     }, 
+    classId: {
+        type: String,
+    }, 
     sentOn: { type: Date, default: Date.now },
     status: {
         type: String,
