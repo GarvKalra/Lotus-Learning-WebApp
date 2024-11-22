@@ -65,8 +65,6 @@ app.use(isAuth);
 const cookeHandler = require('./middleware/cookie-handler');
 app.use('/cookies', cookeHandler);
 
-const fileUpload = require('express-fileupload');
-app.use(fileUpload({ useTempFiles: true }));
 // ROUTES
 const userRoutes = require('./routes/user-routes/user-routes');
 app.use('/user', userRoutes);

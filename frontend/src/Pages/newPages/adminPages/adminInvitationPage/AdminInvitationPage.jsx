@@ -60,6 +60,7 @@ const AdminInvitationPage = () => {
 
     const formData = new FormData();
     formData.append("file", file);
+    console.log(formData);
 
     try {
 
