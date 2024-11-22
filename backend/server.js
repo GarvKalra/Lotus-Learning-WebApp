@@ -32,16 +32,12 @@ app.use('/static/js', (req, res, next) => {
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
-
-const corsOptions = {
-  origin: 'http://localhost:3000',
-  credentials: true,
-};
-
-
-
-// Apply CORS middleware globally before routes
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    credentials: true,
+    origin: 'http://localhost:3000',
+  })
+);
 
 
 const logger = require('./logger');
