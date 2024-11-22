@@ -80,6 +80,7 @@ const CreateEditHome = ({ courseData, setCourseData }) => {
   
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
+    console.log("test")
     if (file) {
       try {
         // Resize the image to 750x422 before uploading

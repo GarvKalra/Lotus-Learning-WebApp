@@ -29,7 +29,7 @@ const AdminManageCourses = () => {
 
   const getAllAcceptedCourses = async () => {
     try {
-      const res = await getCoursesByProp("accepted", true, authUser.institution.code);
+      const res = await getCoursesByProp('creator.email', authUser.email, authUser.institution.code);
       setCourses(res.res);
       setFilteredCourses(res.res); 
       setLoaded(true);
