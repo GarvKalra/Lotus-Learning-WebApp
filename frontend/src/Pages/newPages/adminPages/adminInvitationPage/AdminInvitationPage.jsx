@@ -46,10 +46,11 @@ const AdminInvitationPage = () => {
         selectedFile.type === "application/vnd.ms-excel")
     ) {
       setFile(selectedFile);
+      console.log("File selected:", selectedFile);
     } else {
       alert("Please upload a valid Excel file (.xlsx or .xls)");
-      e.target.value = null;
     }
+    e.target.value = null;
   };
 
   const handleUpload = async () => {
