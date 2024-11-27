@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const studentSchema = new mongoose.Schema({
+const preuserSchema = new mongoose.Schema({
     institutionCode: {
         type: String,
         required: true,
@@ -10,19 +10,18 @@ const studentSchema = new mongoose.Schema({
         required: true,
         unique: true
     }, 
-    classId: {
-        type: String,
-    }, 
     sentOn: { type: Date, default: Date.now },
     status: {
         type: String,
         enum: ['Pending', 'Accepted'], 
         default: 'Pending'
     },
-    file: { type: mongoose.Schema.Types.ObjectId, ref: 'File' }
-}, {
+    file: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
+    typeOfAccount: {type:String},
+}, 
+{
     timestamps: true
 });
 
-const Students = mongoose.model('Students', studentSchema);
-module.exports = Students;
+const PreUser = mongoose.model('PreUser', preuserSchema);
+module.exports = PreUser;

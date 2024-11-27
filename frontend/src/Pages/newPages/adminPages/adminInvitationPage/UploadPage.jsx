@@ -9,7 +9,7 @@ import axios from "axios";
 
 const UploadPage = () => {
   const { uploadId } = useParams(); // Get uploadId from the URL
-  const [students, setStudents] = useState([]);
+  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -17,18 +17,18 @@ const UploadPage = () => {
   const itemsPerPage = 10; // Limit per page
 
   useEffect(() => {
-    fetchStudents();
-  }, [uploadId]); // Fetch all students when uploadId changes
+    fetchUsers();
+  }, [uploadId]); // Fetch all users when uploadId changes
 
-  const fetchStudents = async () => {
+  const fetchUsers = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}api/students/files/${uploadId}/students`
+        `${process.env.REACT_APP_API_URL}api/preUser/files/${uploadId}/preUsers`
       );
-      setStudents(response.data.students); // Set all students
+      setUsers(response.data.preUsers); // Set all users
     } catch (error) {
-      console.error("Error fetching students:", error);
-      alert("Failed to fetch students.");
+      console.error("Error fetching users:", error);
+      alert("Failed to fetch users.");
     }
   };
 
@@ -42,21 +42,21 @@ const UploadPage = () => {
   };
 
   // Apply filters and sorting
-  const filteredStudents = students.filter((student) => {
-    if (filterStatus !== "All" && student.status !== filterStatus) return false;
-    if (!student.email.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+  const filteredUsers = users.filter((user) => {
+    if (filterStatus !== "All" && user.status !== filterStatus) return false;
+    if (!user.email.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
 
-  const sortedStudents = filteredStudents.sort((a, b) => {
+  const sortedUsers = filteredUsers.sort((a, b) => {
     return sortDirection === "asc"
       ? a.email.localeCompare(b.email)
       : b.email.localeCompare(a.email);
   });
 
-  // Paginate students
-  const totalPages = Math.ceil(sortedStudents.length / itemsPerPage);
-  const currentStudents = sortedStudents.slice(
+  // Paginate users
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
+  const currentUsers = sortedUsers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -118,29 +118,29 @@ const UploadPage = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {currentStudents.map((student, index) => (
+              {currentUsers.map((user, index) => (
                 <tr key={index} className="border-b">
-                  <td className="py-2">{student.email}</td>
+                  <td className="py-2">{user.email}</td>
                   <td className="py-2">
-                    {new Date(student.sentOn).toLocaleString()}
+                    {new Date(user.sentOn).toLocaleString()}
                   </td>
                   <td className="py-2">
                     <div className="flex justify-end">
                       <div
                         className={`px-2 py-1 text-sm flex items-center justify-center ${
-                          student.status === "Accepted"
+                          user.status === "Accepted"
                             ? "bg-green-500"
                             : "bg-yellow-500"
                         } rounded-full`}
                       >
                         <p
                           className={`font-medium ${
-                            student.status === "Accepted"
+                            user.status === "Accepted"
                               ? "text-green-100"
                               : "text-yellow-100"
                           }`}
                         >
-                          {student.status}
+                          {user.status}
                         </p>
                       </div>
                     </div>
@@ -154,7 +154,7 @@ const UploadPage = () => {
             currentPage={currentPage}
             onPageChange={(page) => setCurrentPage(page)}
           />
-          {sortedStudents.length === 0 && (
+          {sortedUsers.length === 0 && (
             <div className="text-center py-4 text-gray-500">
               No students found
             </div>

@@ -48,8 +48,10 @@ const SignUp = ({ type = 'student' }) => {
   const [emailExists, setEmailExists] = useState(null); // To track if email exists
   const [emailError, setEmailError] = useState('');
 
+
   // Function to check email existence
   const checkEmailExists = async (email) => {
+    let check = false;
     if (!email) {
       setEmailExists(null);
       setEmailError('');
@@ -57,23 +59,35 @@ const SignUp = ({ type = 'student' }) => {
     }
   
     try {
-      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}api/students/verify-email/${email}`);
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}api/preUser/verify-email/${email}`);
       console.log(data);
-      setEmailExists(data.success);
+
+      if(data.success)
+      {
+        check = true;
+      setEmailExists(true);
       console.log(emailExists);
-      console.log(data.student.status);
-      setInstitCode(data.student.institutionCode);
-     
-      if (data.student.status === "accepted") {
+      console.log(data.preUser.status);
+      setInstitCode(data.preUser.institutionCode);
+      }
+      else
+      {
+        setEmailExists(false);
+        setInstitCode('');
+      }
+     return check;
+      /*
+      if (data.preUser.status === "accepted") {
         setStatus(true);
         setEmailError('This email is already registered.');
       } else {
         setEmailError('');
-      }
+      }*/
     } catch (error) {
       console.error('Error checking email existence:', error);
       setEmailExists(null);
-      setEmailError('Unable to verify email. Please try again later.');
+      setEmailError('Unable to verify email.');
+      return check;
     }
   };
 
@@ -85,24 +99,58 @@ const SignUp = ({ type = 'student' }) => {
     setUsernameTaken(false); // Reset username error state
     setInvitatioCodeErr(false);
     setInvitationCodeMismatch(false);
+    setEmailError('');
 
-    if (!validateFormData()) {
-      setLoading(false);
-      return;
-    }
+    const isValid = await validateFormData();
+  if (!isValid) {
+   setLoading(false); 
+    return;
+  }
 
-    if (haveInvitationCode) {
-      if (!matchingInstitCode) {
-        setInvitatioCodeErr(true); 
+  if (email && accountType === 'student') {
+    console.log("Checking!");
+   // await checkEmailExists(email); 
+}
+const verifiedEmail = await checkEmailExists(email); 
+   // No account creation if the email is verifiable but the toggle is off for code
+   if (verifiedEmail && !haveInvitationCode && accountType === 'student') {
+   
+    setEmailError('This email is linked to an institution. Please enter an institution code.');
+    setLoading(false);
+    return;
+  } else {
+    console.log({
+      emailExists,
+      haveInvitationCode,
+      accountType
+    });
+  }
+  if (haveInvitationCode) {
+    try {
+        // Check if the institution code exists
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}user/check-invitation-code`, {
+            code: invitationCode,
+        });
+
+        if (!response.data.success) {
+            setInvitatioCodeErr(true); // Set institution code not found error
+            setLoading(false);
+            return;
+        }
+    } catch (error) {
+        console.error('Error checking institution code:', error);
+        setInvitatioCodeErr(true); // Set institution code not found error
         setLoading(false);
         return;
-      }
-      if (invitationCode !== matchingInstitCode) {
-        setInvitationCodeMismatch(true); 
+    }
+
+    // Check if the invitation code matches the user's input
+    if (invitationCode !== matchingInstitCode && accountType === 'student') {
+        setInvitationCodeMismatch(true);
         setLoading(false);
         return;
-      }
     }
+}
 
     try {
       const response = await axios.post(process.env.REACT_APP_API_URL + 'user/create-user', {
@@ -133,17 +181,20 @@ const SignUp = ({ type = 'student' }) => {
           }
 
           //Updating student status here
+          if(invitationCode)
+          {
         const statusResponse = await axios.post(
-          'http://localhost:5000/api/students/update-status',
+          'http://localhost:5000/api/preUser/update-status',
            { email: email }
         );
+      
 
         if (statusResponse.data.success) {
           console.log(`Status updated to 'accepted' for ${email}`, statusResponse.data);
         } else {
           console.error(`Failed to update status for ${email}:`, statusResponse.data.error);
         }
-
+      }
         }
         navigate('/');
 
@@ -151,6 +202,7 @@ const SignUp = ({ type = 'student' }) => {
         // Handle errors related to email or username
         if (response.data.message === 'The email is already in use') {
           setInvalidEmail(true);
+          setEmailError(response.data.message);
         } else if (response.data.message === 'The username is already taken') {
           setUsernameTaken(true);
         } else if (response.data.message === 'Institution not found') {
@@ -235,16 +287,19 @@ const SignUp = ({ type = 'student' }) => {
 
     try {
       // Wait for email check to complete
+      if(haveInvitationCode && accountType === 'student')
+      {
       await checkEmailExists(email);
+      }
 
       // After email check, check the result
-      if (emailExists && pendingStatus ) {
+      if (emailExists && pendingStatus && accountType === 'student' ) {
         setInvalidEmail(true);
         setEmailError('This email is already registered.');
         return false;
       }
     } catch (error) {
-      setEmailError('Unable to verify email. Please try again later.');
+      setEmailError('Unable to verify email.');
       return false;
     }
 
@@ -260,21 +315,25 @@ const SignUp = ({ type = 'student' }) => {
     return true;
   };
 
+
   useEffect(() => {
-    if (!emailExists) {
-      setHaveInvitationCode(false);
-      setInvitationCode('');
+    if (emailExists === false && accountType === 'student') {
+      setEmailError('Unable to verify email.');
+      setInstitCode(''); // Clear institution code, but don't reset the toggle
     }
   }, [emailExists]);
 
   useEffect(() => {
     setSamePassword(false); // Reset samePassword state when password or confirmPassword changes
   }, [password, confirmPassword]);
-  useEffect(() => {
-    if (!haveInvitationCode) {
-      setInvitationCode('')
-    }
-  }, [haveInvitationCode])
+useEffect(() => {
+
+  if (!haveInvitationCode) {
+    setInvitationCode(''); // Clear the invitation code input
+    setInvitatioCodeErr(false); // Reset institution code not found error
+    setInvitationCodeMismatch(false); // Reset code mismatch error
+  }
+}, [haveInvitationCode]);
   return (
     <div className="space-y-3 w-[400px]  md:p-0 p-2">
       <div>
@@ -324,12 +383,11 @@ const SignUp = ({ type = 'student' }) => {
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
-            checkEmailExists(e.target.value); //checking email here
           }}
           className={`${styles.simple_text_input}`}
         />
         {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
-        {invalidEmail && <p className="text-red-500 text-sm">Please use your official student email</p>}
+        {invalidEmail && <p className="text-red-500 text-sm"></p>}
         {/* {invalidEmail && <p className="text-red-500 text-sm">Email already exists, please login  </p>} */}
         {/* {invalidEmail && <p className="text-red-500 text-sm">Invalid Email type, or Email already being used   </p>} */}
         <label htmlFor="username" className="font-bold cursor-pointer pl-2 pt-2">
@@ -345,19 +403,19 @@ const SignUp = ({ type = 'student' }) => {
         />
         {usernameTaken && <p className="text-red-500 text-sm">Username is already taken, please try different username</p>}
         <label htmlFor="invcode" className="font-bold cursor-pointer pl-2 pt-2">
-          Are you linked to an institution?
-        </label>
-        <div
-          onClick={() => emailExists && setHaveInvitationCode(!haveInvitationCode)}
-          className={`cursor-pointer ml-3 slider-cointainer h-[20px] w-[35px] relative rounded-full ${haveInvitationCode ? 'linearGradient_ver1' : 'bg-stone-300'
-            } ${!emailExists ? 'cursor-not-allowed opacity-50' : ''}`}
-        >
-          <div
-            className={`slider h-[25px] w-[25px] bg-white rounded-full border ${haveInvitationCode ? 'slider-on' : 'slider-off'
-              } transition-all`}
-          ></div>
-        </div>
-        {haveInvitationCode && emailExists && (
+  Are you linked to an institution?
+</label>
+<div
+  onClick={() => setHaveInvitationCode(!haveInvitationCode)} // Always toggle on click
+  className={`cursor-pointer ml-3 slider-cointainer h-[20px] w-[35px] relative rounded-full 
+    ${haveInvitationCode ? 'linearGradient_ver1' : 'bg-stone-300'}`} // Style reflects state
+>
+  <div
+    className={`slider h-[25px] w-[25px] bg-white rounded-full border 
+      ${haveInvitationCode ? 'slider-on' : 'slider-off'} transition-all`}
+  ></div>
+</div>
+{haveInvitationCode && (
   <>
     <label htmlFor="invcode" className="font-bold cursor-pointer pl-2 pt-2">
       Institution Code
@@ -378,14 +436,12 @@ const SignUp = ({ type = 'student' }) => {
         />
       </div>
     </div>
-    {/* Display only one error based on priority */}
     {invitatioCodeErr && <p className="text-red-500 text-sm">Institution code not found</p>}
     {!invitatioCodeErr && invitationCodeMismatch && (
       <p className="text-red-500 text-sm">Institution code does not match</p>
     )}
   </>
 )}
-
 
 
         {/* <label className="font-bold cursor-pointer pl-2 pt-2">

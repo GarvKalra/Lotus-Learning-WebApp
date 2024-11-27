@@ -76,8 +76,8 @@ const aiRoutes = require('./routes/ai-routes/ai-routes')
 app.use('/ai', aiRoutes);
 app.use('/notification',notificationRoutes);
 
-const studentRoutes = require('./routes/studentRoutes');
-app.use('/api/students', studentRoutes);
+const preUserRoutes = require('./routes/preUserRoutes');
+app.use('/api/preUser', preUserRoutes);
 // app.use((err, req, res, next) => {
 //   console.error(err.stack);
 //   res.status(500).json({ 

@@ -27,7 +27,7 @@ const AdminInvitationPage = () => {
     try {
 
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}api/students/files`
+        `${process.env.REACT_APP_API_URL}api/preUser/files`
       );
       console.log("Fetched files:", response.data);
       setFiles(response.data);
@@ -72,7 +72,7 @@ const AdminInvitationPage = () => {
       }
 
       await axios.post(
-        `${process.env.REACT_APP_API_URL}api/students/uploads?institutionCode=${institutionCode}`,
+        `${process.env.REACT_APP_API_URL}api/preUser/uploads?institutionCode=${institutionCode}`,
 
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
@@ -102,7 +102,7 @@ const AdminInvitationPage = () => {
 
     try {
       for (const fileId of selectedFiles) {
-        await axios.delete(`${process.env.REACT_APP_API_URL}api/students/files/${fileId}`);
+        await axios.delete(`${process.env.REACT_APP_API_URL}api/preUser/files/${fileId}`);
       }
 
       alert("Selected files deleted successfully.");
@@ -193,7 +193,7 @@ const AdminInvitationPage = () => {
                 </th>
                 <th className="text-left">File Name</th>
                 <th className="text-left">Uploaded On</th>
-                <th className="text-left">Total Students</th>
+                <th className="text-left">Total Entries</th>
                 <th className="text-left"></th>
               </tr>
             </thead>
@@ -209,13 +209,13 @@ const AdminInvitationPage = () => {
                   </td>
                   <td className="py-2">{file.fileName}</td>
                   <td className="py-2">{new Date(file.uploadedOn).toLocaleString()}</td>
-                  <td className="py-2">{file.students ? file.students.length : 0}</td>
+                  <td className="py-2">{file.preUsers ? file.preUsers.length : 0}</td>
                   <td className="py-2 flex space-x-2">
                     <button
                       onClick={() => navigate(`/uploads/${file._id}`)}
                       className="bg-blue-500 text-white px-3 py-1 rounded-full font-medium"
                     >
-                      View Students
+                      View Content
                     </button>
                   </td>
                 </tr>
