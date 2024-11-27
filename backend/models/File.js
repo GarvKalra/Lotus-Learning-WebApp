@@ -5,7 +5,7 @@ const FileSchema = new mongoose.Schema({
     uploadedOn: { type: Date, default: Date.now },
     institutionCode: { type: String, required: true },
     totalStudents: { type: Number, default: 0 },
-    students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Students' }] // Link to students
+    preUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'PreUser' }] 
   });
   
   module.exports = mongoose.model('File', FileSchema);

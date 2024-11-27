@@ -1,11 +1,11 @@
 const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
-const Student = require('../models/Students.js');
+const PreUser = require('../models/PreUser.js');
 const router = express.Router();
 const User = require("../models/User.js");
-const Students = require('../models/Students.js');
 const File = require('../models/File.js')
+const Enrollment = require("../models/Enrollment.js")
 
 
 const storage = multer.memoryStorage();
@@ -51,8 +51,8 @@ router.post('/uploads', upload.single('file'), async (req, res) => {
     }
 
     // Check for emails that already exist in the database
-    const existingStudents = await Students.find({ email: { $in: emails } });
-    const existingEmailList = existingStudents.map((student) => student.email);
+    const existingPreUsers = await PreUser.find({ email: { $in: emails } });
+    const existingEmailList = existingPreUsers.map((preUser) => preUser.email);
 
     if (existingEmailList.length > 0) {
       return res.status(400).json({
@@ -65,12 +65,12 @@ router.post('/uploads', upload.single('file'), async (req, res) => {
       fileName: file.originalname,
       institutionCode,
       uploadedAt: new Date(),
-      studentCount: data.length,
+      preUserCount: data.length,
     });
     await newFile.save();
 
-    // Prepare new students
-    const newStudents = emails.map((email) => ({
+    // Prepare new users
+    const newPreUsers = emails.map((email) => ({
       email,
       institutionCode,
       sentOn: new Date(),
@@ -78,17 +78,17 @@ router.post('/uploads', upload.single('file'), async (req, res) => {
       file: [newFile._id],
     }));
 
-    // Insert new students into the database
-    const savedNewStudents = await Students.insertMany(newStudents);
+    // Insert new users into the database
+    const savedNewPreUsers = await PreUser.insertMany(newPreUsers);
 
-    // Update the file with all linked students
-    newFile.students = savedNewStudents.map((s) => s._id);
+    // Update the file with all linked users
+    newFile.preUsers = savedNewPreUsers.map((pu) => pu._id);
     await newFile.save();
 
     res.status(200).json({
       message: 'File uploaded successfully.',
       file: newFile,
-      students: savedNewStudents,
+      preUsers: savedNewPreUsers,
     });
   } catch (error) {
     console.error('Error uploading file:', error);
@@ -107,27 +107,34 @@ router.delete('/files/:fileId', async (req, res) => {
       return res.status(404).json({ message: 'File not found.' });
     }
 
-    // Find and delete students associated with the file
-    const studentsToDelete = await Student.find({ file: fileId });
-    const studentEmails = studentsToDelete.map(student => student.email);
+    // Find users associated with the file
+    const preUsersToDelete = await PreUser.find({ file: fileId });
+    const preUserEmails = preUsersToDelete.map(preUser => preUser.email);
 
-    await Student.deleteMany({ file: fileId });
+    // Delete the users
+    const deletedPreUsers = await PreUser.deleteMany({ file: fileId });
 
-    // Find and delete users with matching emails
-    const deletedUsers = await User.deleteMany({ email: { $in: studentEmails } });
+    // Find users with matching emails
+    const usersToDelete = await User.find({ email: { $in: preUserEmails } });
+    const userIds = usersToDelete.map(user => user._id); // Collect user IDs
+
+    // Delete users with matching emails
+    const deletedUsers = await User.deleteMany({ email: { $in: preUserEmails } });
+
+    // Delete enrollments associated with the deleted users
+    const deletedEnrollments = await Enrollment.deleteMany({ learner: { $in: userIds } });
 
     res.status(200).json({
-      message: 'File deleted successfully.',
-      deletedStudents: studentsToDelete.length,
-      deletedUsers: deletedUsers.deletedCount, // Count of users deleted
+      message: 'File, associated students, users, and enrollments deleted successfully.',
+      deletedPreUsers: deletedPreUsers.deleteCount,
+      deletedUsers: deletedUsers.deletedCount, 
+      deletedEnrollments: deletedEnrollments.deletedCount,
     });
   } catch (error) {
     console.error('Error deleting file:', error);
     res.status(500).json({ message: 'Failed to delete file.' });
   }
 });
-
-
 
 router.get('/files', async (req, res) => {
   try {
@@ -140,39 +147,39 @@ router.get('/files', async (req, res) => {
 });
 
 
-router.get('/files/:fileId/students', async (req, res) => {
+router.get('/files/:fileId/preUsers', async (req, res) => {
   try {
       const { fileId } = req.params;
 
-      // Find the file and populate its students
-      const file = await File.findById(fileId).populate('students');
+      // Find the file and populate its users
+      const file = await File.findById(fileId).populate('preUsers');
       if (!file) {
           return res.status(404).json({ message: 'File not found.' });
       }
 
       // Get all student emails
-      const studentEmails = file.students.map((student) => student.email);
+      const preUserEmails = file.preUsers.map((preUser) => preUser.email);
 
       // Find matching users in the User collection
-      const matchingUsers = await User.find({ email: { $in: studentEmails } });
+      const matchingUsers = await User.find({ email: { $in: preUserEmails } });
 
       if (matchingUsers.length > 0) {
           const matchedEmails = matchingUsers.map((user) => user.email);
 
-          // Update the status of matching students to "Accepted"
-          await Student.updateMany(
+          // Update the status of matching users to "Accepted"
+          await PreUser.updateMany(
               { email: { $in: matchedEmails } },
               { $set: { status: 'Accepted' } }
           );
       }
 
-      // Re-fetch students to reflect updated statuses
-      const updatedFile = await File.findById(fileId).populate('students');
+      // Re-fetch users to reflect updated statuses
+      const updatedFile = await File.findById(fileId).populate('preUsers');
 
-      res.status(200).json({ students: updatedFile.students });
+      res.status(200).json({ preUsers: updatedFile.preUsers });
   } catch (error) {
       console.error('Error fetching and updating students:', error);
-      res.status(500).json({ message: 'Failed to fetch and update students.' });
+      res.status(500).json({ message: 'Failed to fetch and update users.' });
   }
 });
 
@@ -182,15 +189,15 @@ router.get('/:institutionCode', async (req, res) => {
   try {
     const institutionCode = req.params.institutionCode;
 
-    const students = await Student.find({ institutionCode }).sort({ email: 1 }); 
-    res.status(200).json(students);
+    const preUsers = await PreUser.find({ institutionCode }).sort({ email: 1 }); 
+    res.status(200).json(preUsers);
   } catch (error) {
-    console.error('Error fetching students:', error);
-    res.status(500).json({ message: 'Error fetching students' });
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Error fetching users' });
   }
 });
 
-// UPDATE student status
+// UPDATE user status
 router.post('/update-status', async (req, res) => {
   console.log("route accessed");
   try {
@@ -198,7 +205,7 @@ router.post('/update-status', async (req, res) => {
     const { email } = req.body;
     console.log("Received email for update:", email); // Confirm email is received
 
-    const updatedStudent = await Students.findOneAndUpdate(
+    const updatedPreUser = await PreUser.findOneAndUpdate(
       { email: email },  // find by email
       {
         $set: {
@@ -210,11 +217,11 @@ router.post('/update-status', async (req, res) => {
       }
     );
 
-    if (!updatedStudent) {
-      console.log("No student found with email:", email);
+    if (!updatedPreUser) {
+      console.log("No user found with email:", email);
       return res.status(404).json({
         success: false,
-        error: `No student found with email: ${email}`
+        error: `No user found with email: ${email}`
       });
     }
 
@@ -222,30 +229,19 @@ router.post('/update-status', async (req, res) => {
       success: true,
       message: `Status updated to 'accepted' for ${email}`,
       data: {
-        student: updatedStudent
+        preUser: updatedPreUser
       }
     });
 
   } catch (error) {
-    console.log("Error in update-status route:", error); // Log error details
+    console.log("Error in update-preUser route:", error); // Log error details
     return res.status(400).json({
       success: false,
       error: error.message,
-      details: 'Error updating student status'
+      details: 'Error updating user status'
     });
   }
 });
-
-// router.get('/get-emails', async (req, res) => {
-//   try {
-//     const students = await Students.find({}, 'email'); // Fetch only the 'email' field
-//     const emails = students.map(student => student.email); // Extract emails into an array
-//     res.status(200).json({ success: true, emails });
-//   } catch (error) {
-//     console.error('Error fetching student emails:', error);
-//     res.status(500).json({ success: false, message: 'Server error' });
-//   }
-// });
 
 router.get('/verify-email/:email', async (req, res) => {
   try {
@@ -253,10 +249,10 @@ router.get('/verify-email/:email', async (req, res) => {
     console.debug('Email to verify:', email); // Debug log for email
 
     // Use Mongoose's `findOne` since you expect a single match for a unique email
-    const student = await Students.findOne({ email }); 
+    const preUser = await PreUser.findOne({ email }); 
 
-    if (student) {
-      return res.status(200).json({ success: true, student });
+    if (preUser) {
+      return res.status(200).json({ success: true, preUser });
     } else {
       return res.status(404).json({ success: false, message: 'Email not found' });
     }
