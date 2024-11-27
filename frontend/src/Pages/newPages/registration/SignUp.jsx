@@ -180,11 +180,11 @@ const verifiedEmail = await checkEmailExists(email);
             console.error('Enrollment failed:', enrollResponse.data.message);
           }
 
-          //Updating student status here
+          //Updating user status here
           if(invitationCode)
           {
         const statusResponse = await axios.post(
-          'http://localhost:5000/api/preUser/update-status',
+          process.env.REACT_APP_API_URL + 'api/preUser/update-status',
            { email: email }
         );
       
