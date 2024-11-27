@@ -51,46 +51,24 @@ const SignUp = ({ type = 'student' }) => {
 
   // Function to check email existence
   const checkEmailExists = async (email) => {
-    let check = false;
-    if (!email) {
-      setEmailExists(null);
-      setEmailError('');
-      return;
-    }
+    if (!email) return { exists: false, institutionCode: '' };
   
     try {
       const { data } = await axios.get(`${process.env.REACT_APP_API_URL}api/preUser/verify-email/${email}`);
       console.log(data);
-
-      if(data.success)
-      {
-        check = true;
-      setEmailExists(true);
-      console.log(emailExists);
-      console.log(data.preUser.status);
-      setInstitCode(data.preUser.institutionCode);
-      }
-      else
-      {
-        setEmailExists(false);
-        setInstitCode('');
-      }
-     return check;
-      /*
-      if (data.preUser.status === "accepted") {
-        setStatus(true);
-        setEmailError('This email is already registered.');
+  
+      if (data.success) {
+        setInstitCode(data.preUser.institutionCode); 
+        return { exists: true, institutionCode: data.preUser.institutionCode };
       } else {
-        setEmailError('');
-      }*/
+        setInstitCode(''); 
+        return { exists: false, institutionCode: '' };
+      }
     } catch (error) {
       console.error('Error checking email existence:', error);
-      setEmailExists(null);
-      setEmailError('Unable to verify email.');
-      return check;
+      return { exists: false, institutionCode: '' };
     }
   };
-
 
   const createAccount = async () => {
     if (loading) return;
@@ -111,7 +89,7 @@ const SignUp = ({ type = 'student' }) => {
     console.log("Checking!");
    // await checkEmailExists(email); 
 }
-const verifiedEmail = await checkEmailExists(email); 
+const { verifiedEmail, institutionCode } = await checkEmailExists(email);
    // No account creation if the email is verifiable but the toggle is off for code
    if (verifiedEmail && !haveInvitationCode && accountType === 'student') {
    
@@ -145,7 +123,7 @@ const verifiedEmail = await checkEmailExists(email);
     }
 
     // Check if the invitation code matches the user's input
-    if (invitationCode !== matchingInstitCode && accountType === 'student') {
+    if (invitationCode !== institutionCode && accountType === 'student') {
         setInvitationCodeMismatch(true);
         setLoading(false);
         return;
