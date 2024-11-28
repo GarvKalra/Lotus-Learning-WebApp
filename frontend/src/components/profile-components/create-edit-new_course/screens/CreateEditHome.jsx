@@ -5,6 +5,7 @@ import { IoClose } from "react-icons/io5";
 import { AiFillFileImage } from "react-icons/ai";
 import updateCourseDataProxy from "../../../../BackendProxy/courseProxy/updateCourseData"; // Adjust import path if needed
 import { useSelector } from "react-redux";
+import axios from "axios";
 
 const CreateEditHome = ({ courseData, setCourseData }) => {
   const authUser = useSelector((state) => state.user);
@@ -14,40 +15,102 @@ const CreateEditHome = ({ courseData, setCourseData }) => {
   const [categories, setCategories] = useState([]);
   const [complexity, setComplexity] = useState("");
 
-  // Handle image upload and preview
-  const handleImageChange = async (event) => {
+ 
+  
+  const resizeImage = (file, width, height) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+  
+      reader.onload = (event) => {
+        img.src = event.target.result;
+      };
+  
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+  
+        canvas.width = width;
+        canvas.height = height;
+  
+        // Draw the resized image on canvas
+        ctx.drawImage(img, 0, 0, width, height);
+  
+        // Convert canvas to Blob
+        canvas.toBlob(
+          (blob) => {
+            const newFile = new File([blob], file.name, { type: file.type });
+            resolve(newFile);
+          },
+          file.type,
+          0.9 // Set quality to 90%
+        );
+      };
+  
+      img.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+  
+  const handleUploadFile = async (file) => {
+    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME; //Cloudinary Cloud Name
+    const uploadPreset = "image_preset"; // Cloudinary Upload Preset
+  
+    if (!cloudName || !uploadPreset) {
+      console.error("Cloudinary configuration is missing");
+      return;
+    }
+  
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", uploadPreset);
+  
+    try {
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        data
+      );
+      console.log("Uploaded image URL:", response.data.secure_url);
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading image:", error.response?.data || error.message);
+      return null;
+    }
+  };
+  
+  const handleImageUpload = async (event) => {
     const file = event.target.files[0];
-    if (file && file.type.startsWith("image/")) {
-      setCourseImage(URL.createObjectURL(file)); // Set local preview for the image
-
-      // Upload the image to the backend
-      const formData = new FormData();
-      formData.append("image", file);
-
+    console.log("test")
+    if (file) {
       try {
-        const response = await updateCourseDataProxy(formData);
-        if (response.data.success && response.data.imageUrl) {
-          // Update courseData with the new image URL
-          const newCourseData = { ...courseData, imageUrl: response.data.imageUrl };
-          setCourseData(newCourseData);
-          console.log("Course updated successfully with new image URL");
-        } else {
-          console.error("Failed to update course image URL");
+        // Resize the image to 750x422 before uploading
+        const resizedImageFile = await resizeImage(file, 750, 422);
+  
+        // Upload resized image
+        const uploadResponse = await handleUploadFile(resizedImageFile);
+  
+        if (uploadResponse) {
+          const { secure_url: imageUrl } = uploadResponse;
+  
+          setCourseData((prevState) => ({
+            ...prevState,
+            imageUrl: imageUrl,
+          }));
+  
+          console.log(`Image uploaded successfully with name: ${resizedImageFile.name}`);
         }
       } catch (error) {
-        console.error("Error updating course:", error);
+        console.error("Error uploading image:", error);
       }
-    } else {
-      console.error("Invalid file type");
     }
   };
 
-  // Reset all form values
+
   const resetValues = () => {
     setCourseTitle("");
     setCourseDesc("");
-    setCourseImage(null);
     setCategories([]);
+    setCourseData((prevState) => ({ ...prevState, image: null }));
   };
 
   //save - create new course
@@ -148,9 +211,9 @@ const updateCategories = (newCategoriesValue) => {
         <div className="mt-3" style={{ userSelect: "none" }}>
           <p className="font-semibold mb-1">Course Image</p>
           <div className="border lg:h-[211px] lg:w-[375px] h-[151px] w-[275px] flex items-center justify-center">
-            {courseImage ? (
+            {courseData.imageUrl ? (
               <img
-                src={courseImage}
+                src={courseData.imageUrl}
                 alt="Selected Image"
                 className="object-cover h-full w-full"
               />
@@ -161,7 +224,7 @@ const updateCategories = (newCategoriesValue) => {
           <div className="flex items-center space-x-2 text-stone-500 font-medium mt-2">
             <div className="relative px-2 py-1 border cursor-pointer bg-stone-50 hover:bg-stone-100">
               <input
-                onChange={handleImageChange}
+                onChange={handleImageUpload}
                 type="file"
                 className="h-full w-full absolute opacity-0  cursor-pointer left-0 top-0"
               />

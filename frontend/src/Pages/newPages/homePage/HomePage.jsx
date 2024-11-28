@@ -29,8 +29,6 @@ const HomePage = () => {
     getAllAcceptedCourses()
   },[])
 
-  
-
 
   const getAllAcceptedCourses = async () => {
     try {
@@ -62,41 +60,31 @@ const HomePage = () => {
 
   return (
     <div className="h-full w-full max-w-screen overflow-x-hidden">
-       <GeneralNavbar courses={courses} />
-<div className="w-full mx-auto  pb-2 flex items-center flex-col">
-        <div className="xl:w-[1350px] lg:w-[1000px] w-full">
-          <CarrouselHeader />
-        </div>
-        <div className="xl:w-[1350px] lg:w-[1000px] w-full">
-
-        </div>
-     
-        <div className="xl:max-w-[1400px] lg:max-w-[1000px] w-full flex">
-        <p className="pt-2 font-semibold md:text-xl sm:text-md text-sm text-stone-700 pl-3">Discover Our Course Offerings</p>
-        
-        </div>
-        <div className="max-w-[1400px] mx-auto py-2 flex items-center justify-center">
-          
-        <div className="grid md:gap-1 gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 ">
-
-          {/* Added placeholder course cards for testing purposes */}
-          {/* <CarrouselShowCase>
-            <SwiperSlide>
-              <Astronomy9CourseCard/>
-              </SwiperSlide>
-          </CarrouselShowCase> */}
-            {courses && courses.map((item, id) => {
-              return (
-                <div key={item._id}>
-                  <GeneralCourseCard item={item} userId={authUser._id}/>
-                </div>
-              )
-            })}
+    <GeneralNavbar courses={courses} />
+    <div className="w-full mx-auto pb-6 flex flex-col items-center">
+      <div className="w-full max-w-[1200px] px-4">
+        <CarrouselHeader />
+      </div>
+  
+      <div className="w-full max-w-[1200px] px-4 mt-2">
+        <p className="font-semibold text-lg md:text-xl text-stone-700">
+          Discover Our Course Offerings
+        </p>
+      </div>
+  
+      <div className="w-full max-w-[1200px] px-4 mt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {courses &&
+            courses.map((item) => (
+              <div key={item._id} className="transform scale-105 hover:scale-110 transition-transform duration-300">
+                <GeneralCourseCard item={item} userId={authUser._id} />
+              </div>
+            ))}
         </div>
       </div>
-      </div>
-      <GeneralFooter />
     </div>
+    <GeneralFooter />
+  </div>
   );
 };
 

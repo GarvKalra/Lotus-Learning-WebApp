@@ -1,5 +1,5 @@
 // Use `info` as our standard log level if not specified
-const options = { level: process.env.LOG_LEVEL || 'info' };
+const options = { level: process.env.LOG_LEVEL || 'debug' };
 
 // If we're doing `debug` logging, make the logs easier to read
 if (options.level === 'debug') {

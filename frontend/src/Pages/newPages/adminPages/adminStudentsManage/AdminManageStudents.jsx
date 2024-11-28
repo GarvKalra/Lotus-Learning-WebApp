@@ -163,7 +163,7 @@ const AdminManageStudents = () => {
         );
   
         setStudents(updatedStudents);
-        filterStudents(updatedStudents); // Ensure filtered list is also updated
+        await filterStudents(updatedStudents); // Ensure filtered list is also updated
         adjustPageAfterDeletion();
         
       } else {
@@ -226,7 +226,7 @@ const AdminManageStudents = () => {
         }));
   
         setStudents(updatedStudents);
-        filterStudents(updatedStudents); // Sync filtered list
+        await filterStudents(updatedStudents); // Sync filtered list
         adjustPageAfterDeletion();
         setSelectedStudents([]); // Clear selected checkboxes
       } else {

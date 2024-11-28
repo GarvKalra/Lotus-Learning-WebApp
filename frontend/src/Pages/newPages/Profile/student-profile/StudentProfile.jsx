@@ -76,7 +76,8 @@ const StudentProfile = () => {
                       _id: course._id, 
                       title: course.title, 
                       creator: { username: course.creator.institutionName },
-                      createdAt: course.createdAt 
+                      createdAt: course.createdAt,
+                      imageUrl:course.imageUrl
                     }} userId={authUser._id} 
                   />
                 ) : (

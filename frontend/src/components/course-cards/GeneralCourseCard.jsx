@@ -12,8 +12,7 @@ const GeneralCourseCard = ({ item = {
   const navigate = useNavigate();
 
   const handleNavigateToCoursePreface = () => {
-console.log("item",item);
-//console.log("item2",userId);
+    console.log("item", item);
     navigate('/course-preface', {
       state: {
         courseId: item._id,
@@ -26,6 +25,9 @@ console.log("item",item);
     });
   };
 
+  // Check if imageUrl exists in the item, otherwise fallback to a default image
+  const imageUrl = item.imageUrl || "https://contenthub-static.grammarly.com/blog/wp-content/uploads/2023/07/Subject-Complement.png";
+
   return (
     <div
       onClick={handleNavigateToCoursePreface}
@@ -34,8 +36,8 @@ console.log("item",item);
       <div className="w-full h-[calc(100%-6rem)] sm:h-[calc(100%-4rem)] flex items-center justify-center p-2">
         <img
           className="h-full w-full object-cover rounded-sm"
-          src="https://contenthub-static.grammarly.com/blog/wp-content/uploads/2023/07/Subject-Complement.png"
-          alt=""
+          src={imageUrl} 
+          alt="Course"
         />
       </div>
       <div className="px-2 flex flex-col justify-between h-[3rem]">

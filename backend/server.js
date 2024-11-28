@@ -32,16 +32,12 @@ app.use('/static/js', (req, res, next) => {
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
-
-const corsOptions = {
-  origin: 'http://localhost:3000',
-  credentials: true,
-};
-
-
-
-// Apply CORS middleware globally before routes
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    credentials: true,
+    origin: 'http://localhost:3000',
+  })
+);
 
 
 const logger = require('./logger');
@@ -84,8 +80,8 @@ const aiRoutes = require('./routes/ai-routes/ai-routes')
 app.use('/ai', aiRoutes);
 app.use('/notification',notificationRoutes);
 
-const studentRoutes = require('./routes/studentRoutes');
-app.use('/api/students', studentRoutes);
+const preUserRoutes = require('./routes/preUserRoutes');
+app.use('/api/preUser', preUserRoutes);
 // app.use((err, req, res, next) => {
 //   console.error(err.stack);
 //   res.status(500).json({ 

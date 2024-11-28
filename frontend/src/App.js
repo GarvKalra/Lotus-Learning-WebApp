@@ -42,6 +42,8 @@ import CoursePreface from "./Pages/newPages/coursePage/LearningPageCourse/Course
 import AdminSendNotification from "./Pages/newPages/adminPages/adminStudentsManage/AdminSendNotification";
 import MessageProfile from "./Pages/newPages/Profile/MessageProfile";
 import VerifyCertificate from "./Pages/newPages/coursePage/VerifyCertificate";
+import UploadPage from "./Pages/newPages/adminPages/adminInvitationPage/UploadPage";
+
 // Debug For Firebase Messaging
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
@@ -122,6 +124,7 @@ function App() {
             <Route path="/course-search" element={<NewPage/>}/>  {/*  my change   */}
             <Route path="/messages" element={<MessageProfile/>}/>
             <Route path="/certificate/verify/:certificateId" element={<VerifyCertificate />} />
+            <Route path="/uploads/:uploadId" element={<UploadPage />} />
 
             <Route path="/profile/:screen?/:secondscreen?/:courseid?" element={
               <ProtectedRoute  isAuthenticated={(authUser)}>
