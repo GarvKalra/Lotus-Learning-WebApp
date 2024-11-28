@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from 'axios';
 import GeneralNavbar from "../../../../components/navbar/GeneralNavbar";
 import LearningPageSideMenu from "./LearningPageSideMenu";
 import LearningMainContent from "./LearningMainContent";
@@ -9,6 +10,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import generateCertificate from "../../../../BackendProxy/courseProxy/generateCertificate";
 import { jsPDF } from 'jspdf';
 import { useSelector } from "react-redux";
+import { v4 as uuidv4 } from 'uuid';
 
 
 const LearningCoursePage = ({ userId }) => {
@@ -103,13 +105,18 @@ const LearningCoursePage = ({ userId }) => {
       throw error;
     }
   };
-  const generateCertificate = (userName, courseName) => {
+  const generateCertificate = async (userName, courseName) => {
+    // Generate a unique certificate ID
+    const certificateId = uuidv4();
+  
+    // Generate the certificate PDF
     const doc = new jsPDF("landscape"); // Set orientation to landscape
 
     // Set up colors for background elements
     const primaryColor = [70, 130, 180]; // Steel blue for title and main text
     const lightColor = [220, 230, 240]; // Light blue for background design
 
+    
     // Background rectangle
     doc.setFillColor(...lightColor);
     doc.rect(10, 10, 270, 180, "F"); // Light background rectangle to frame content
@@ -155,13 +162,37 @@ const LearningCoursePage = ({ userId }) => {
     doc.text(`Date: ${completionDate}`, 30, 160); // Date at the bottom left
     doc.text("Certified by: PHC Institute", 250, 160, { align: "right" });
 
-    // Optional logo or seal (add a small logo if you have one)
-    // doc.addImage(logo, "PNG", 120, 140, 50, 50);
+    doc.text(`Certificate of Completion`, 148, 60, { align: "center" });
+    doc.setFontSize(16);
+    
+  
+  const baseUrl = "http://localhost:3000";
+  const authenticityLink = `${baseUrl}/certificate/verify/${certificateId}`;
 
-    // Save the PDF
-    const fileName = `Certificate_${userName}_${courseName}.pdf`;
-    doc.save(fileName);
-};
+
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 255); // Blue color for link
+  doc.textWithLink(authenticityLink, 148, 170, { url: authenticityLink });
+
+  doc.save(`Certificate_${userName}_${courseName}.pdf`);;
+      
+    // Save the certificate details to the backend
+    try {
+      const response = await axios.post(process.env.REACT_APP_API_URL + 'certificate/save', {
+        username: userName,
+        courseName,
+        certificateId,
+      });
+  
+      if (response.data.success) {
+        console.log('Certificate saved successfully:', response.data.certificate);
+      } else {
+        console.error('Failed to save certificate:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error saving certificate:', error);
+    }
+  };
 
   
 

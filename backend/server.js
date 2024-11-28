@@ -69,6 +69,10 @@ app.use(isAuth);
 const cookeHandler = require('./middleware/cookie-handler');
 app.use('/cookies', cookeHandler);
 
+
+const certificateRoutes = require('./routes/certificate-routes/certificate-routes');
+app.use('/certificate', certificateRoutes);
+
 // ROUTES
 const userRoutes = require('./routes/user-routes/user-routes');
 app.use('/user', userRoutes);
@@ -131,9 +135,11 @@ app.use("/highlight", (req, res) => {
 setupWebSocketServer(server);
 
 
+
 app.get('*', (req, res) => {
-  res.sendFile(path.join('/var/www/Lotus-Learning-WebApp/frontend/build', 'index.html'));
+  res.sendFile(path.resolve(__dirname, 'frontend/build', 'index.html'));
 });
+
 
 connectToDatabases()
   .then(() => {
