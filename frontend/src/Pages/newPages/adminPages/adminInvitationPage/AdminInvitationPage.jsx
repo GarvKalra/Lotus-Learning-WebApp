@@ -91,23 +91,27 @@ const AdminInvitationPage = () => {
   };
 
   const handleDeleteSelected = async () => {
-    if (selectedFiles.length === 0) {
-      alert("No files selected for deletion.");
-      return;
-    }
-
+   
+  
     if (!window.confirm("Are you sure you want to delete the selected files?")) {
       return;
     }
-
+  
     try {
       for (const fileId of selectedFiles) {
         await axios.delete(`${process.env.REACT_APP_API_URL}api/preUser/files/${fileId}`);
       }
-
+  
       alert("Selected files deleted successfully.");
       setSelectedFiles([]);
-      fetchUploadedFiles();
+      await fetchUploadedFiles();
+  
+      // Check if the current page is now empty and reset to the previous valid page
+      const updatedFilesCount = files.length - selectedFiles.length;
+      const newTotalPages = Math.ceil(updatedFilesCount / itemsPerPage);
+      if (currentPage > newTotalPages) {
+        setCurrentPage(Math.max(newTotalPages, 1)); // Move to the last valid page or page 1
+      }
     } catch (error) {
       console.error("Error deleting files:", error.response || error);
       alert(
@@ -115,7 +119,9 @@ const AdminInvitationPage = () => {
       );
     }
   };
-
+  
+  
+  
   const toggleFileSelection = (fileId) => {
     setSelectedFiles((prevSelectedFiles) =>
       prevSelectedFiles.includes(fileId)
@@ -165,11 +171,14 @@ const AdminInvitationPage = () => {
               Upload
             </button>
             <button
-              onClick={handleDeleteSelected}
-              className="bg-red-500 text-white px-3 py-1 rounded-full font-medium transition-all hover:bg-red-600"
-            >
-              Delete Selected
-            </button>
+  onClick={handleDeleteSelected}
+  disabled={selectedFiles.length === 0} // Disable if no files are selected
+  className={`px-4 py-2 rounded-full font-medium text-white ${
+    selectedFiles.length > 0 ? "bg-red-500 hover:bg-red-600" : "bg-gray-300"
+  } transition-all`}
+>
+  Delete Selected
+</button>
           </div>
         </div>
 
@@ -178,18 +187,29 @@ const AdminInvitationPage = () => {
             <thead>
               <tr>
                 <th>
-                  <input
-                    type="checkbox"
-                    onChange={(e) =>
-                      setSelectedFiles(
-                        e.target.checked ? files.map((file) => file._id) : []
-                      )
-                    }
-                    checked={
-                      selectedFiles.length === files.length &&
-                      files.length > 0
-                    }
-                  />
+                <input
+  type="checkbox"
+  onChange={(e) => {
+    if (e.target.checked) {
+      // Add current page files to selectedFiles
+      const currentPageFileIds = currentFiles.map((file) => file._id);
+      setSelectedFiles((prevSelectedFiles) => [
+        ...prevSelectedFiles,
+        ...currentPageFileIds.filter((id) => !prevSelectedFiles.includes(id)), // Avoid duplicates
+      ]);
+    } else {
+      // Remove current page files from selectedFiles
+      const currentPageFileIds = currentFiles.map((file) => file._id);
+      setSelectedFiles((prevSelectedFiles) =>
+        prevSelectedFiles.filter((id) => !currentPageFileIds.includes(id))
+      );
+    }
+  }}
+  checked={
+    currentFiles.length > 0 &&
+    currentFiles.every((file) => selectedFiles.includes(file._id))
+  }
+/>
                 </th>
                 <th className="text-left">File Name</th>
                 <th className="text-left">Uploaded On</th>
@@ -211,10 +231,14 @@ const AdminInvitationPage = () => {
                   <td className="py-2">{new Date(file.uploadedOn).toLocaleString()}</td>
                   <td className="py-2">{file.preUsers ? file.preUsers.length : 0}</td>
                   <td className="py-2 flex space-x-2">
-                    <button
-                      onClick={() => navigate(`/uploads/${file._id}`)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded-full font-medium"
-                    >
+                  <button
+  onClick={() =>
+    navigate(`/uploads/${file._id}`, {
+      state: { fileName: file.fileName }, 
+    })
+  }
+  className="bg-blue-500 text-white px-3 py-1 rounded-full font-medium"
+>
                       View Content
                     </button>
                   </td>
