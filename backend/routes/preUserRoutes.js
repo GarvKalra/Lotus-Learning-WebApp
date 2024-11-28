@@ -5,7 +5,9 @@ const PreUser = require('../models/PreUser.js');
 const router = express.Router();
 const User = require("../models/User.js");
 const File = require('../models/File.js')
-const Enrollment = require("../models/Enrollment.js")
+const Enrollment = require("../models/Enrollment.js");
+const { getLogger } = require('nodemailer/lib/shared/index.js');
+const logger = require('../logger.js')
 
 
 const storage = multer.memoryStorage();
@@ -96,6 +98,7 @@ router.post('/uploads', upload.single('file'), async (req, res) => {
   }
 });
 
+
 router.delete('/files/:fileId', async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -135,6 +138,74 @@ router.delete('/files/:fileId', async (req, res) => {
     res.status(500).json({ message: 'Failed to delete file.' });
   }
 });
+
+// DELETE selected pre-users by email and associated enrollments
+router.post('/files/:fileId/delete-preUsers', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const { emails } = req.body; // Array of emails to delete
+
+    if (!emails || emails.length === 0) {
+      return res.status(400).json({ message: 'No emails provided for deletion.' });
+    }
+logger.debug("test");
+    // Find the pre-users to delete
+    const preUsersToDelete = await PreUser.find({
+      email: { $in: emails },
+      file: fileId,
+    });
+     console.log(preUsersToDelete);
+    if (!preUsersToDelete || preUsersToDelete.length === 0) {
+      return res.status(404).json({ message: 'No matching pre-users found to delete.' });
+    }
+
+    // Collect user emails and IDs
+    const userEmails = preUsersToDelete.map((preUser) => preUser.email);
+
+    // Delete the pre-users
+    const deletedPreUsers = await PreUser.deleteMany({
+      email: { $in: emails },
+      file: fileId,
+    });
+
+    // Remove the references from the file
+    await File.findByIdAndUpdate(fileId, {
+      $pull: { preUsers: { $in: preUsersToDelete.map((preUser) => preUser._id) } },
+    });
+
+    // Find users in the User collection matching the emails
+    const usersToDelete = await User.find({ email: { $in: userEmails } });
+
+    if (usersToDelete.length > 0) {
+      const userIds = usersToDelete.map((user) => user._id);
+
+      // Delete the users
+      const deletedUsers = await User.deleteMany({ _id: { $in: userIds } });
+
+      // Delete enrollments associated with the users
+      const deletedEnrollments = await Enrollment.deleteMany({
+        learner: { $in: userIds },
+      });
+
+      return res.status(200).json({
+        message: 'Selected pre-users deleted successfully.',
+        deletedPreUsers: deletedPreUsers.deletedCount,
+        deletedUsers: deletedUsers.deletedCount,
+        deletedEnrollments: deletedEnrollments.deletedCount,
+      });
+    }
+
+    // If no matching users were found in the User collection
+    res.status(200).json({
+      message: 'Selected pre-users deleted successfully.',
+      deletedPreUsers: deletedPreUsers.deletedCount,
+    });
+  } catch (error) {
+    console.error('Error deleting pre-users and enrollments:', error);
+    res.status(500).json({ message: 'Failed to delete pre-users and enrollments.' });
+  }
+});
+
 
 router.get('/files', async (req, res) => {
   try {
