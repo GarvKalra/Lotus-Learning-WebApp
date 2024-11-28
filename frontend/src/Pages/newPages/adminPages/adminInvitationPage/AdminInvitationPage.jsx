@@ -240,7 +240,7 @@ const AdminInvitationPage = () => {
       state: { fileName: file.fileName }, 
     })
   }
-  className="bg-blue-500 text-white px-3 py-1 rounded-full font-medium"
+  className="bg-blue-500 text-white px-3 py-1 rounded-full font-medium transition-all hover:bg-blue-600 hover:scale-[1.05]"
 >
                       View Content
                     </button>
